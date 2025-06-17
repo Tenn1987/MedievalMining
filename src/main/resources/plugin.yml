@@ -1,0 +1,38 @@
+name: MedievalMining
+version: 0.0.044
+main: com.brandon.globaleconomy.core.PluginCore
+api-version: 1.19
+commands:
+  balance:
+    description: Shows your wallet balances
+    usage: /balance
+  city:
+    description: Manage your cities
+    usage: /city <create|delete>
+  citysave:
+    description: Saves all cities to disk
+    usage: /citysave
+    permission: medievalmining.admin
+  cityreload:
+    description: Reloads all cities from disk
+    usage: /cityreload
+    permission: medievalmining.admin
+  currency:
+    description: Manage currencies (create, list, info)
+    usage: /currency <create|list|info>
+  economy:
+    description: Economy administration commands
+    usage: /economy <subcommand>
+  money:
+    description: Shows your wallet balances
+    usage: /money
+  pay:
+    description: Send money to another player
+    usage: /pay <player> <amount> [currency]
+  wallet:
+    description: Manage your wallet
+    usage: /wallet
+  worker:
+    description: Manage workers in a city
+    usage: /worker <list|add|remove|info> [city] [workerType] [workerName]
+softdepend: [dynmap]
