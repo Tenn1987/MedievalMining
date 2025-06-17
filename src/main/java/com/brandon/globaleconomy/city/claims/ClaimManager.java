@@ -84,7 +84,7 @@ public class ClaimManager {
         for (int dx = -chunkClaimRadius; dx <= chunkClaimRadius; dx++) {
             for (int dz = -chunkClaimRadius; dz <= chunkClaimRadius; dz++) {
                 Chunk chunk = null;
-                chunk = world.getChunkAt(centerX + dx, centerZ + dz);
+                 chunk = world.getChunkAt(centerX + dx, centerZ + dz);
                 // Check for overlap immediately
                 if (chunkToCityMap.containsKey(chunk)) {
                     System.out.println("DEBUG: Chunk at " + chunk + " already claimed by " + chunkToCityMap.get(chunk));
