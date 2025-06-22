@@ -59,6 +59,8 @@ public class PluginCore extends JavaPlugin {
         // ==== (2) Load cities from YAML and add to cityManager ====
         Map<String, City> loadedCities = cityYamlLoader.loadCities();
         for (City city : loadedCities.values()) {
+            claimManager.claimChunksForCity(city);
+            System.out.println("[DEBUG] " + city.getName() + " now owns " + claimManager.getChunksForCity(city).size() + " chunks.");
             cityManager.addCity(city);
         }
 
@@ -75,6 +77,8 @@ public class PluginCore extends JavaPlugin {
         getCommand("citysave").setExecutor(new CitySaveCommand(cityManager, cityYamlLoader));
         getCommand("cityreload").setExecutor(new CityReloadCommand(cityManager, cityYamlLoader, nameLoader, workerFactory));
         getServer().getPluginManager().registerEvents(new RegionBannerListener(this, claimManager, cityManager), this);
+
+
 
         // ... any other setup ...
     }

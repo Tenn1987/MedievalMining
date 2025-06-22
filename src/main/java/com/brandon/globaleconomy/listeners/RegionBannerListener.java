@@ -31,8 +31,11 @@ public class RegionBannerListener implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         if (event.getFrom().getChunk().equals(event.getTo().getChunk())) return;
-
         Player player = event.getPlayer();
+        System.out.println("[DEBUG] PlayerMoveEvent triggered for: " + player.getName());
+        System.out.println("[DEBUG] From chunk: " + event.getFrom().getChunk() + " To chunk: " + event.getTo().getChunk());
+// if (event.getFrom().getChunk().equals(event.getTo().getChunk())) return;
+
         Chunk chunk = event.getTo().getChunk();
         String cityName = claimManager.getCityNameAtChunk(chunk);
 
@@ -50,19 +53,24 @@ public class RegionBannerListener implements Listener {
         String subtitle;
         if (cityName != null) {
             City city = cityManager.getCityByName(cityName);
-            String color = city != null ? city.getColorCode() : "§f";
-            subtitle ="Entering " + cityName;
+            String name = city.getName().toLowerCase();
+            String color;
+            switch (name) {
+                case "moscow": color = "§4"; break;     // dark red
+                case "kiev": color = "§6"; break;       // gold
+                default: color = "§f"; break;           // white
+            }
+            subtitle = color + "Entering §e" + cityName;
         } else {
             subtitle = "§7§oWilderness"; // gray, italic
         }
 
         // Use only the subtitle, with blank title, for a small format
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                player.sendTitle("", subtitle, 5, 36, 5);
-            }
-        }.runTaskLater(plugin, 2L);
+        System.out.println("[DEBUG] Showing action bar: " + subtitle);
+        player.spigot().sendMessage(
+                net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
+                new net.md_5.bungee.api.chat.TextComponent(subtitle)
+        );
     }
 
     public void onPlayerQuit(UUID uuid) {
