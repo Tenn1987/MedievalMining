@@ -1,17 +1,19 @@
 package com.brandon.globaleconomy.commands;
 
-import com.brandon.globaleconomy.economy.currencies.NationCurrencyManager;
+import com.brandon.globaleconomy.economy.WalletManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class BalanceCommand implements CommandExecutor {
-    private final NationCurrencyManager nationCurrencyManager;
+import java.util.Map;
 
-    public BalanceCommand(NationCurrencyManager nationCurrencyManager) {
-        this.nationCurrencyManager = nationCurrencyManager;
+public class BalanceCommand implements CommandExecutor {
+    private final WalletManager walletManager;
+
+    public BalanceCommand(WalletManager walletManager) {
+        this.walletManager = walletManager;
     }
 
     @Override
@@ -22,12 +24,19 @@ public class BalanceCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
-        StringBuilder balances = new StringBuilder(ChatColor.YELLOW + "Your Balances:\n");
-        for (String code : nationCurrencyManager.getCurrencyCodes()) {
-            double balance = nationCurrencyManager.getBalance(player.getUniqueId(), code);
-            balances.append(ChatColor.GRAY).append(code).append(": ").append(balance).append("\n");
+        Map<String, Double> balances = walletManager.getAllBalances(player.getUniqueId());
+
+        if (balances.isEmpty()) {
+            player.sendMessage(ChatColor.RED + "Your wallet is empty.");
+            return true;
         }
-        player.sendMessage(balances.toString());
+
+        StringBuilder message = new StringBuilder(ChatColor.YELLOW + "Your Balances:\n");
+        for (Map.Entry<String, Double> entry : balances.entrySet()) {
+            message.append(ChatColor.GRAY).append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+
+        player.sendMessage(message.toString());
         return true;
     }
 }

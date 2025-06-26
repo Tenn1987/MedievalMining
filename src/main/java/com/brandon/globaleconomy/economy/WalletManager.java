@@ -1,28 +1,35 @@
+
 package com.brandon.globaleconomy.economy;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class WalletManager {
-    // playerUUID -> (currencyName -> balance)
     private final Map<UUID, Map<String, Double>> wallets = new HashMap<>();
 
-    public double getBalance(UUID player, String currency) {
-        return wallets.getOrDefault(player, Collections.emptyMap()).getOrDefault(currency, 0.0);
+    public void deposit(UUID playerId, String currency, double amount) {
+        wallets.computeIfAbsent(playerId, k -> new HashMap<>());
+        wallets.get(playerId).merge(currency, amount, Double::sum);
     }
 
-    public void deposit(UUID player, String currency, double amount) {
-        wallets.computeIfAbsent(player, k -> new HashMap<>())
-                .merge(currency, amount, Double::sum);
+    public boolean withdraw(UUID playerId, String currency, double amount) {
+        Map<String, Double> wallet = wallets.get(playerId);
+        if (wallet == null) return false;
+        double current = wallet.getOrDefault(currency, 0.0);
+        if (current >= amount) {
+            wallet.put(currency, current - amount);
+            return true;
+        }
+        return false;
     }
 
-    public boolean withdraw(UUID player, String currency, double amount) {
-        Map<String, Double> bal = wallets.getOrDefault(player, null);
-        if (bal == null || bal.getOrDefault(currency, 0.0) < amount) return false;
-        bal.put(currency, bal.get(currency) - amount);
-        return true;
+    public double getBalance(UUID playerId, String currency) {
+        Map<String, Double> wallet = wallets.get(playerId);
+        return wallet != null ? wallet.getOrDefault(currency, 0.0) : 0.0;
     }
 
-    public Set<String> getCurrencies(UUID player) {
-        return wallets.getOrDefault(player, Collections.emptyMap()).keySet();
+    public Map<String, Double> getAllBalances(UUID playerId) {
+        return new HashMap<>(wallets.getOrDefault(playerId, new HashMap<>()));
     }
 }

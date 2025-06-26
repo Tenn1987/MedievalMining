@@ -34,7 +34,7 @@ public class CityYamlLoader {
             cityData.put("z", city.getLocation().getBlockZ());
             cityData.put("population", city.getPopulation());
             cityData.put("color", city.getColor());
-            cityData.put("currencyName", city.getCurrencyName());
+            cityData.put("currencyName", city.getPrimaryCurrency());
             cityData.put("mayorId", city.getMayorId() != null ? city.getMayorId().toString() : "");
             // Optional: Save workers as simple role:name list
             List<Map<String, String>> workers = new ArrayList<>();

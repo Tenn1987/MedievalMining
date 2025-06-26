@@ -1,5 +1,5 @@
 name: MedievalMining
-version: 0.0.045
+version: 0.0.046
 main: com.brandon.globaleconomy.core.PluginCore
 api-version: 1.19
 commands:
@@ -17,6 +17,9 @@ commands:
     description: Reloads all cities from disk
     usage: /cityreload
     permission: medievalmining.admin
+  citytreasury:
+    description: View city-held currency balances.
+    usage: /<command>
   currency:
     description: Manage currencies (create, list, info)
     usage: /currency <create|list|info>

@@ -22,6 +22,14 @@ public class CurrencyManager {
         return currencies.keySet();
     }
 
+    public boolean hasCurrency(String name) {
+        return currencies.containsKey(name);
+    }
+
+    public void addCurrency(String name) {
+        createCurrency(name, false, null, 0.0); // Default values for non-metal-backed currency
+    }
+
     public MetalPool getMetalPool() {
         return metalPool;
     }

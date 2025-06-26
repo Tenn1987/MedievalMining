@@ -4,6 +4,7 @@ import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityManager;
 import com.brandon.globaleconomy.city.CityYamlLoader;
 import com.brandon.globaleconomy.city.claims.ClaimManager;
+import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -21,17 +22,21 @@ public class CityCommand implements CommandExecutor {
     private final ClaimManager claimManager;
     private final DynmapManager dynmapManager;
     private final CityYamlLoader cityYamlLoader;
+    private final CurrencyManager currencyManager;
+
 
     public CityCommand(
             CityManager cityManager,
             ClaimManager claimManager,
             DynmapManager dynmapManager,
-            CityYamlLoader cityYamlLoader
+            CityYamlLoader cityYamlLoader,
+            CurrencyManager currencyManager
     ) {
         this.cityManager = cityManager;
         this.claimManager = claimManager;
         this.dynmapManager = dynmapManager;
         this.cityYamlLoader = cityYamlLoader;
+        this.currencyManager = currencyManager;
     }
 
     @Override
@@ -65,11 +70,21 @@ public class CityCommand implements CommandExecutor {
             return true;
         }
 
+
         // /city create <name> <nation>
         if (sub.equals("create") && sender instanceof Player && args.length >= 3) {
             Player player = (Player) sender;
             String cityName = args[1];
             String nation = args[2];
+
+            String currencyName = nation; //Base it off nation name
+
+            // Ensure currency exists or create a default gold-backed one
+            if (!currencyManager.hasCurrency(currencyName)) {
+                currencyManager.createCurrency(currencyName, true, "GOLD_INGOT", 1.0);
+                sender.sendMessage(ChatColor.YELLOW + "Currency '" + currencyName + "' created (gold-backed).");
+            }
+            
             if (cityManager.getCity(cityName) != null) {
                 player.sendMessage(ChatColor.RED + "City already exists.");
                 return true;
@@ -81,7 +96,6 @@ public class CityCommand implements CommandExecutor {
             String color = cityManager.getRandomColor();
 
             UUID mayorId = player.getUniqueId(); // Creator is mayor by default
-            String currencyName = nation;        // Or whatever logic you want
 
             City city = new City(cityName, nation, location, population, color, currencyName, mayorId);
 

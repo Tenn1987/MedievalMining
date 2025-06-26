@@ -2,28 +2,30 @@ package com.brandon.globaleconomy.core;
 
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityManager;
+import com.brandon.globaleconomy.city.CityYamlLoader;
 import com.brandon.globaleconomy.city.claims.ClaimManager;
 import com.brandon.globaleconomy.city.impl.commands.CityCommand;
-import com.brandon.globaleconomy.city.CityYamlLoader;
+import com.brandon.globaleconomy.city.impl.commands.CityTreasuryCommand;
 import com.brandon.globaleconomy.commands.CityReloadCommand;
 import com.brandon.globaleconomy.commands.CitySaveCommand;
+import com.brandon.globaleconomy.commands.WalletCommand;
 import com.brandon.globaleconomy.config.NameLoader;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
-import com.brandon.globaleconomy.economy.impl.workers.Worker;
+import com.brandon.globaleconomy.economy.api.EconomyAPI;
+import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
+import com.brandon.globaleconomy.economy.currencies.ExchangeEngine;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
+import com.brandon.globaleconomy.economy.WalletManager;
 import com.brandon.globaleconomy.listeners.CityRegionListener;
 import com.brandon.globaleconomy.listeners.RegionBannerListener;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
 import java.io.File;
 import java.util.*;
-
-import org.bukkit.Chunk;
-
-import static org.dynmap.bukkit.DynmapPlugin.plugin;
 
 public class PluginCore extends JavaPlugin {
     private CityManager cityManager;
@@ -33,6 +35,11 @@ public class PluginCore extends JavaPlugin {
     private CityYamlLoader cityYamlLoader;
     private WorkerFactory workerFactory;
 
+    // === NEW Economy Components ===
+    private WalletManager walletManager;
+    private CurrencyManager currencyManager;
+    private ExchangeEngine exchangeEngine;
+    private EconomyAPI economyAPI;
 
     @Override
     public void onEnable() {
@@ -44,7 +51,13 @@ public class PluginCore extends JavaPlugin {
         workerFactory = new WorkerFactory();
         NameLoader nameLoader = new NameLoader(dataFolder);
 
-        // ==== (1) Initialize DynmapManager FIRST ====
+        // === (1) Initialize Economy Components ===
+        walletManager = new WalletManager();
+        currencyManager = new CurrencyManager();
+        exchangeEngine = new ExchangeEngine();
+        economyAPI = new EconomyAPI(walletManager, currencyManager, exchangeEngine, cityManager);
+
+        // === (2) Initialize DynmapManager FIRST ===
         DynmapAPI dynmapAPI = null;
         if (getServer().getPluginManager().getPlugin("dynmap") != null &&
                 getServer().getPluginManager().getPlugin("dynmap").isEnabled()) {
@@ -56,7 +69,7 @@ public class PluginCore extends JavaPlugin {
             System.out.println("DEBUG: DynmapManager is null after initialization!");
         }
 
-        // ==== (2) Load cities from YAML and add to cityManager ====
+        // === (3) Load cities and claim chunks ===
         Map<String, City> loadedCities = cityYamlLoader.loadCities();
         for (City city : loadedCities.values()) {
             claimManager.claimChunksForCity(city);
@@ -64,7 +77,7 @@ public class PluginCore extends JavaPlugin {
             cityManager.addCity(city);
         }
 
-        // ==== (3) Update Dynmap polygons for all loaded cities ====
+        // === (4) Update Dynmap polygons ===
         if (dynmapManager != null) {
             for (City city : cityManager.getCities().values()) {
                 System.out.println("DEBUG: addOrUpdateCityAreaPolygon for " + city.getName());
@@ -72,15 +85,16 @@ public class PluginCore extends JavaPlugin {
             }
         }
 
-        // ==== (4) Register commands and listeners ====
-        getCommand("city").setExecutor(new CityCommand(cityManager, claimManager, dynmapManager, cityYamlLoader));
+        // === (5) Register commands ===
+        getCommand("city").setExecutor(new CityCommand(cityManager, claimManager, dynmapManager, cityYamlLoader, currencyManager));
         getCommand("citysave").setExecutor(new CitySaveCommand(cityManager, cityYamlLoader));
         getCommand("cityreload").setExecutor(new CityReloadCommand(cityManager, cityYamlLoader, nameLoader, workerFactory));
+        getCommand("wallet").setExecutor(new WalletCommand(walletManager)); // NEW wallet command
+        getCommand("citytreasury").setExecutor(new CityTreasuryCommand(cityManager));
+
+
+        // === (6) Register listeners ===
         getServer().getPluginManager().registerEvents(new RegionBannerListener(this, claimManager, cityManager), this);
-
-
-
-        // ... any other setup ...
     }
 
     @Override
@@ -88,5 +102,9 @@ public class PluginCore extends JavaPlugin {
         if (cityYamlLoader != null && cityManager != null) {
             cityYamlLoader.saveCities(cityManager.getCities());
         }
+    }
+
+    public EconomyAPI getEconomyAPI() {
+        return economyAPI;
     }
 }
