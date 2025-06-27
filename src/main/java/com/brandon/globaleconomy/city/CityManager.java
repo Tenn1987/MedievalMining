@@ -2,6 +2,8 @@ package com.brandon.globaleconomy.city;
 
 import com.brandon.globaleconomy.city.claims.ClaimManager;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -94,7 +96,8 @@ public class CityManager {
      */
     public void addCityWithMayor(String name, String nation, Location location, int population, String color, String currencyName, UUID mayorId) {
         City city = new City(name, nation, location, population, color, currencyName, mayorId);
-        addCity(city); // Will trigger resource scan
+        addCity(city);
+        buildBellPedestal(location); // Build bell pedestal
     }
 
     /**
@@ -102,7 +105,8 @@ public class CityManager {
      */
     public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color, String currencyName, int mayorNpcId) {
         City city = new City(name, nation, location, population, color, currencyName, mayorNpcId);
-        addCity(city); // Will trigger resource scan
+        addCity(city);
+        buildBellPedestal(location); // Build bell pedestal
     }
 
     public void clear() {
@@ -116,7 +120,8 @@ public class CityManager {
      */
     public void addCityNoMayor(String name, String nation, Location location, int population, String color, String currencyName) {
         City city = new City(name, nation, location, population, color, currencyName);
-        addCity(city); // Will trigger resource scan
+        addCity(city);
+        buildBellPedestal(location); // Build bell pedestal
     }
 
     public City getCityAt(Location location) {
@@ -128,5 +133,33 @@ public class CityManager {
     }
 
 
-    // If your City constructor changes, update accordingly above!
+
+    private void buildBellPedestal(Location center) {
+        World world = center.getWorld();
+        int x = center.getBlockX();
+        int y = center.getBlockY();
+        int z = center.getBlockZ();
+
+        // Clear space (3x3 up to 3 blocks tall)
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 2; dy++) {
+                    world.getBlockAt(x + dx, y + dy, z + dz).setType(Material.AIR);
+                }
+            }
+        }
+
+        // Set 3x3 cobblestone base
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                world.getBlockAt(x + dx, y, z + dz).setType(Material.COBBLESTONE);
+            }
+        }
+
+        // Raise center and place bell
+        world.getBlockAt(x, y + 1, z).setType(Material.COBBLESTONE);
+        world.getBlockAt(x, y + 2, z).setType(Material.BELL);
+    }
+
+// If your City constructor changes, update accordingly above!
 }

@@ -1,9 +1,9 @@
 package com.brandon.globaleconomy.commands;
 
-import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
-import com.brandon.globaleconomy.economy.currencies.NationalCurrency;
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityManager;
+import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
+import com.brandon.globaleconomy.economy.currencies.NationalCurrency;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;

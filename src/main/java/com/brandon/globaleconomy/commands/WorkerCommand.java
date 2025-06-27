@@ -1,3 +1,4 @@
+
 package com.brandon.globaleconomy.commands;
 
 import com.brandon.globaleconomy.city.City;
@@ -20,7 +21,6 @@ public class WorkerCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // /worker list <city>
         if (args.length >= 2 && args[0].equalsIgnoreCase("list")) {
             City city = cityManager.getCity(args[1]);
             if (city == null) {
@@ -33,23 +33,43 @@ public class WorkerCommand implements CommandExecutor {
             }
             return true;
         }
-        // /worker add <city> <role> <name>
+
         if (args.length >= 4 && args[0].equalsIgnoreCase("add")) {
             City city = cityManager.getCity(args[1]);
             if (city == null) {
                 sender.sendMessage(ChatColor.RED + "City not found.");
                 return true;
             }
-            Worker worker = workerManager.createWorker(args[2], city, args[3]);
+            String role = args[2].toLowerCase();
+            String name = args[3];
+            Worker worker = workerManager.createWorker(role, city, name);
             if (worker == null) {
-                sender.sendMessage(ChatColor.RED + "Unknown worker role: " + args[2]);
+                sender.sendMessage(ChatColor.RED + "Invalid role: " + role);
                 return true;
             }
-            city.addWorker(worker);
-            sender.sendMessage(ChatColor.GREEN + "Worker " + worker.getName() + " added as " + worker.getRole() + " in " + city.getName());
+            sender.sendMessage(ChatColor.GREEN + "Added " + role + " named " + name + " to city " + city.getName());
             return true;
         }
-        sender.sendMessage(ChatColor.YELLOW + "Usage: /worker list <city> OR /worker add <city> <role> <name>");
+
+        if (args.length >= 3 && args[0].equalsIgnoreCase("remove")) {
+            City city = cityManager.getCity(args[1]);
+            if (city == null) {
+                sender.sendMessage(ChatColor.RED + "City not found.");
+                return true;
+            }
+            String name = args[2];
+            if (city.removeWorkerByName(name)) {
+                sender.sendMessage(ChatColor.YELLOW + "Removed worker named " + name + " from " + city.getName());
+            } else {
+                sender.sendMessage(ChatColor.RED + "Worker not found: " + name);
+            }
+            return true;
+        }
+
+        sender.sendMessage(ChatColor.RED + "Usage:");
+        sender.sendMessage(ChatColor.GRAY + "/worker list <city>");
+        sender.sendMessage(ChatColor.GRAY + "/worker add <city> <role> <name>");
+        sender.sendMessage(ChatColor.GRAY + "/worker remove <city> <name>");
         return true;
     }
 }

@@ -118,6 +118,19 @@ public class City implements Serializable {
         return new HashMap<>(treasury);
     }
 
+    public boolean removeWorkerByName(String name) {
+        Iterator<Worker> iterator = workers.iterator();
+        while (iterator.hasNext()) {
+            Worker worker = iterator.next();
+            if (worker.getName().equalsIgnoreCase(name)) {
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     // --- Display Mayor Name ---
     public String getMayorDisplayName() {
         if (hasPlayerMayor()) {

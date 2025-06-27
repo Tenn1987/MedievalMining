@@ -8,6 +8,7 @@ import com.brandon.globaleconomy.city.impl.commands.CityCommand;
 import com.brandon.globaleconomy.city.impl.commands.CityTreasuryCommand;
 import com.brandon.globaleconomy.commands.CityReloadCommand;
 import com.brandon.globaleconomy.commands.CitySaveCommand;
+import com.brandon.globaleconomy.commands.CurrencyCommand;
 import com.brandon.globaleconomy.commands.WalletCommand;
 import com.brandon.globaleconomy.config.NameLoader;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
@@ -17,10 +18,8 @@ import com.brandon.globaleconomy.economy.currencies.ExchangeEngine;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.WalletManager;
-import com.brandon.globaleconomy.listeners.CityRegionListener;
 import com.brandon.globaleconomy.listeners.RegionBannerListener;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
@@ -89,6 +88,7 @@ public class PluginCore extends JavaPlugin {
         getCommand("city").setExecutor(new CityCommand(cityManager, claimManager, dynmapManager, cityYamlLoader, currencyManager));
         getCommand("citysave").setExecutor(new CitySaveCommand(cityManager, cityYamlLoader));
         getCommand("cityreload").setExecutor(new CityReloadCommand(cityManager, cityYamlLoader, nameLoader, workerFactory));
+        getCommand("currency").setExecutor(new CurrencyCommand(currencyManager, cityManager));
         getCommand("wallet").setExecutor(new WalletCommand(walletManager)); // NEW wallet command
         getCommand("citytreasury").setExecutor(new CityTreasuryCommand(cityManager));
 
