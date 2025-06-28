@@ -1,6 +1,10 @@
 package com.brandon.globaleconomy.city;
 
 import com.brandon.globaleconomy.city.claims.ClaimManager;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
+import org.bukkit.entity.EntityType;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -94,20 +98,37 @@ public class CityManager {
     /**
      * Add a city with a player mayor.
      */
-    public void addCityWithMayor(String name, String nation, Location location, int population, String color, String currencyName, UUID mayorId) {
+    public void addCityWithMayor(String name, String nation, Location location, int population, String color, String currencyName, UUID mayorId, String parentCityName) {
         City city = new City(name, nation, location, population, color, currencyName, mayorId);
+        city.setParentCityName(parentCityName);
+        city.setForceUseParentCurrency(true);
         addCity(city);
-        buildBellPedestal(location); // Build bell pedestal
+        buildBellPedestal(location);
     }
+
 
     /**
      * Add a city with an NPC mayor.
      */
-    public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color, String currencyName, int mayorNpcId) {
+    public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color, String currencyName, String parentCityName) {
+        // Create the NPC
+        NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name + "_Mayor");
+        int mayorNpcId = npc.getId();
+
+        // Create the city with NPC mayor
         City city = new City(name, nation, location, population, color, currencyName, mayorNpcId);
+
+        // Optional: assign parent if needed
+        city.setParentCityName(parentCityName);
+        city.setForceUseParentCurrency(parentCityName != null);
+
+        // Add city to map and build bell
         addCity(city);
-        buildBellPedestal(location); // Build bell pedestal
+        buildBellPedestal(location);
     }
+
+
+
 
     public void clear() {
         cities.clear();

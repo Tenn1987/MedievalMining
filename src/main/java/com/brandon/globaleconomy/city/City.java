@@ -29,6 +29,8 @@ public class City implements Serializable {
     private boolean independent = true;
     private String parentCityName = null;
     private boolean forceUseParentCurrency = false;
+    private boolean currencyEnforced;
+
 
     // --- Constructors ---
 
@@ -42,6 +44,9 @@ public class City implements Serializable {
         this.primaryCurrency = currencyName;
         this.mayorId = mayorId;
         this.mayorNpcId = null;
+
+        this.parentCityName = parentCityName;
+        this.currencyEnforced = (parentCityName != null);
     }
 
     // NPC mayor constructor
@@ -66,7 +71,12 @@ public class City implements Serializable {
         this.primaryCurrency = currencyName;
         this.mayorId = null;
         this.mayorNpcId = null;
+
+        this.parentCityName = null;
+        this.currencyEnforced = false;
     }
+
+
 
     // --- Getters ---
 
@@ -81,6 +91,7 @@ public class City implements Serializable {
     public void setPrimaryCurrency(String currency) {
         this.primaryCurrency = currency;
     }
+    public boolean isCurrencyEnforced() { return currencyEnforced; }
 
     // --- Mayor Getters/Setters ---
     public boolean hasPlayerMayor() { return mayorId != null; }

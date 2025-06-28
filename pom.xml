@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>MedievalMining</artifactId>
-    <version>0.0.047-SNAPSHOT</version>
+    <version>0.0.048-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

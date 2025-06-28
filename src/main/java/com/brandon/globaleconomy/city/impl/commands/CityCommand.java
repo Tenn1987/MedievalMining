@@ -1,4 +1,3 @@
-
 package com.brandon.globaleconomy.city.impl.commands;
 
 import com.brandon.globaleconomy.city.City;
@@ -40,7 +39,7 @@ public class CityCommand implements CommandExecutor {
         Player player = (Player) sender;
 
         if (args.length == 0) {
-            player.sendMessage(ChatColor.RED + "Usage: /city <info|create|delete> <args>");
+            sendUsage(player);
             return true;
         }
 
@@ -50,12 +49,16 @@ public class CityCommand implements CommandExecutor {
                 player.sendMessage(ChatColor.RED + "City not found.");
                 return true;
             }
+
             player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
             player.sendMessage(ChatColor.GRAY + "Nation: " + city.getNation());
             player.sendMessage(ChatColor.GRAY + "Population: " + city.getPopulation());
             player.sendMessage(ChatColor.GRAY + "Mayor: " + city.getMayorDisplayName());
-            player.sendMessage(ChatColor.GRAY + "Currency: " + city.getPrimaryCurrency());
-            player.sendMessage(ChatColor.GRAY + "Balance: " + city.getCityBalance(city.getPrimaryCurrency()));
+            player.sendMessage(ChatColor.GRAY + "Currency: " + city.getEffectiveCurrency(cityManager));
+            if (city.getParentCityName() != null) {
+                player.sendMessage(ChatColor.GRAY + "Parent City: " + city.getParentCityName());
+            }
+            player.sendMessage(ChatColor.GRAY + "Balance: " + city.getCityBalance(city.getEffectiveCurrency(cityManager)));
             player.sendMessage(ChatColor.DARK_GREEN + "Resources:");
             for (Map.Entry<String, Integer> entry : city.getResources().entrySet()) {
                 if (entry.getValue() > 0) {
@@ -79,8 +82,10 @@ public class CityCommand implements CommandExecutor {
             String name = args[1];
             String nation = args[2];
             String currency = args[3];
+            String parentCity = args.length >= 5 ? args[4] : null;
+
             Location loc = player.getLocation();
-            cityManager.addCityWithMayor(name, nation, loc, 100, cityManager.getRandomColor(), currency, player.getUniqueId());
+            cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);
             cityYamlLoader.saveCities(cityManager.getCities());
             claimManager.claimChunksForCity(cityManager.getCity(name));
             dynmapManager.addOrUpdateCityAreaPolygon(cityManager.getCity(name), claimManager.getChunksForCity(cityManager.getCity(name)));
@@ -88,7 +93,15 @@ public class CityCommand implements CommandExecutor {
             return true;
         }
 
-        player.sendMessage(ChatColor.RED + "Invalid usage. Try /city info <name>, /city create <name> <nation> <currency>, or /city delete <name>");
+        sendUsage(player);
         return true;
+    }
+
+    private void sendUsage(Player player) {
+        player.sendMessage(ChatColor.RED + "Invalid usage. Try:");
+        player.sendMessage(ChatColor.YELLOW + "/city info <name>");
+        player.sendMessage(ChatColor.YELLOW + "/city create <name> <nation> <currency> [parentCity]");
+        player.sendMessage(ChatColor.YELLOW + "/city delete <name>");
+        player.sendMessage(ChatColor.YELLOW + "/city setcurrency <name> <currency>");
     }
 }
