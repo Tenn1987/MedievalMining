@@ -1,6 +1,8 @@
 package com.brandon.globaleconomy.city;
 
 import com.brandon.globaleconomy.city.claims.ClaimManager;
+import com.brandon.globaleconomy.economy.impl.workers.*;
+import com.brandon.globaleconomy.npc.impl.NPCSpawner;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.entity.EntityType;
@@ -41,6 +43,29 @@ public class CityManager {
         cities.put(city.getName().toLowerCase(), city);
         cityByName.put(city.getName(), city);
         city.scanForResources(48);  // Scan for resources on add
+
+        // === Hook: Create initial city workers ===
+        UUID mayorId = UUID.randomUUID();
+        Worker mayor = new Mayor(city, "Mayor_" + city.getName(), mayorId); // ✅ Correct
+        Worker farmer = new Farmer(city, "Farmer_" + city.getName(), UUID.randomUUID());
+        Worker woodsman = new Woodsman(city, "Woodsman_" + city.getName(), UUID.randomUUID());
+        Worker merchant = new Merchant(city, "Merchant_" + city.getName(), UUID.randomUUID());
+
+
+        WorkerManager.getInstance().registerWorker(mayor);
+        WorkerManager.getInstance().registerWorker(farmer);
+        WorkerManager.getInstance().registerWorker(woodsman);
+        WorkerManager.getInstance().registerWorker(merchant);
+
+        // If you're using Citizens, spawn the NPCs visibly:
+        Location baseSpawn = city.getLocation();
+        Location spawnOffset = baseSpawn.clone().add(1, 1, 1);
+
+        NPCSpawner.spawnWorkerNpc(mayor, spawnOffset);
+        NPCSpawner.spawnWorkerNpc(farmer, spawnOffset.clone().add(1, 0, 0));
+        NPCSpawner.spawnWorkerNpc(woodsman, spawnOffset.clone().add(0, 0, 1));
+        NPCSpawner.spawnWorkerNpc(merchant, spawnOffset.clone().add(-1, 0, 0));
+
     }
 
     public boolean removeCity(String name) {
@@ -106,7 +131,6 @@ public class CityManager {
         buildBellPedestal(location);
     }
 
-
     /**
      * Add a city with an NPC mayor.
      */
@@ -126,9 +150,6 @@ public class CityManager {
         addCity(city);
         buildBellPedestal(location);
     }
-
-
-
 
     public void clear() {
         cities.clear();
@@ -152,8 +173,6 @@ public class CityManager {
         }
         return null;
     }
-
-
 
     private void buildBellPedestal(Location center) {
         World world = center.getWorld();
@@ -181,6 +200,4 @@ public class CityManager {
         world.getBlockAt(x, y + 1, z).setType(Material.COBBLESTONE);
         world.getBlockAt(x, y + 2, z).setType(Material.BELL);
     }
-
-// If your City constructor changes, update accordingly above!
 }

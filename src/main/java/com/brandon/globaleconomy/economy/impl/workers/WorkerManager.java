@@ -1,25 +1,42 @@
 package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
+
 import java.util.*;
 
 public class WorkerManager {
+    private static WorkerManager instance;
+    private final Map<UUID, Worker> workers = new HashMap<>();
+    private final List<Worker> allWorkers = new ArrayList<>();
 
-    // For now, all worker creation is manual
-    public Worker createWorker(String role, City city, String name) {
-        switch (role.toLowerCase()) {
-            case "farmer":
-                return new Farmer(city, name);
-            case "miner":
-                return new Miner(city, name);
-            case "merchant":
-                return new Merchant(city, name);
-            case "guard":
-                return new Guard(city, name);
-            default:
-                return null;
-        }
+    public static WorkerManager getInstance() {
+        if (instance == null) instance = new WorkerManager();
+        return instance;
     }
 
-    // You can expand this manager later to keep track of all workers globally if you wish
+    public void registerWorker(Worker worker) {
+        allWorkers.add(worker);
+    }
+
+    public List<Worker> getAllWorkers() {
+        return allWorkers;
+    }
+
+    public void addWorker(Worker worker) {
+        workers.put(worker.getNpcId(), worker);
+    }
+
+
+    public Worker createWorker(WorkerRole role, City city, String name, UUID npcId) {
+        return switch (role) {
+            case FARMER -> new Farmer(city, name, npcId);
+            case MINER -> new Miner(city, name, npcId);
+            case MERCHANT -> new Merchant(city, name, npcId);
+            case GUARD -> new Guard(city, name, npcId);
+            case FISHERMAN -> new Fisherman(city, name, npcId);
+            case WOODSMAN -> new Woodsman(city, name, npcId);
+            case BUILDER -> new Builder(city, name, npcId);
+            default -> throw new IllegalArgumentException("Unhandled worker role: " + role);
+        };
+    }
 }

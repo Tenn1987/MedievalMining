@@ -4,13 +4,15 @@ import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
+import org.bukkit.inventory.Inventory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
-
-// CityYamlLoader.java
 
 public class CityYamlLoader {
     private final File dataFolder;
@@ -19,7 +21,6 @@ public class CityYamlLoader {
         this.dataFolder = dataFolder;
     }
 
-    // SAVE ALL CITIES TO YAML
     public void saveCities(Map<String, City> cities) {
         Yaml yaml = new Yaml();
         Map<String, Object> saveMap = new LinkedHashMap<>();
@@ -36,18 +37,27 @@ public class CityYamlLoader {
             cityData.put("color", city.getColor());
             cityData.put("currencyName", city.getPrimaryCurrency());
             cityData.put("mayorId", city.getMayorId() != null ? city.getMayorId().toString() : "");
-            // Optional: Save workers as simple role:name list
+
+            // Save chest location if exists
+            if (city.getChestLocation() != null) {
+                Location chestLoc = city.getChestLocation();
+                cityData.put("chestWorld", chestLoc.getWorld().getName());
+                cityData.put("chestX", chestLoc.getBlockX());
+                cityData.put("chestY", chestLoc.getBlockY());
+                cityData.put("chestZ", chestLoc.getBlockZ());
+            }
+
             List<Map<String, String>> workers = new ArrayList<>();
             if (city.getWorkers() != null) {
                 for (Worker worker : city.getWorkers()) {
                     Map<String, String> workerMap = new HashMap<>();
-                    workerMap.put("role", worker.getRole());
+                    workerMap.put("role", worker.getRole().name());
                     workerMap.put("name", worker.getName());
+                    workerMap.put("uuid", worker.getNpcId().toString());
                     workers.add(workerMap);
                 }
             }
             cityData.put("workers", workers);
-
             saveMap.put(city.getName(), cityData);
         }
 
@@ -59,13 +69,10 @@ public class CityYamlLoader {
         }
     }
 
-    // LOAD ALL CITIES FROM YAML
     public Map<String, City> loadCities() {
         Map<String, City> cityMap = new LinkedHashMap<>();
         File file = new File(dataFolder, "cities.yml");
-        if (!file.exists()) {
-            return cityMap;
-        }
+        if (!file.exists()) return cityMap;
 
         Yaml yaml = new Yaml();
         try (InputStream is = new FileInputStream(file)) {
@@ -84,21 +91,31 @@ public class CityYamlLoader {
                     String color = (String) cityData.get("color");
                     String currencyName = (String) cityData.get("currencyName");
                     UUID mayorId = null;
-                    if (cityData.get("mayorId") != null && !((String)cityData.get("mayorId")).isEmpty()) {
+                    if (cityData.get("mayorId") != null && !((String) cityData.get("mayorId")).isEmpty()) {
                         mayorId = UUID.fromString((String) cityData.get("mayorId"));
                     }
-                    org.bukkit.Location loc = new org.bukkit.Location(
-                            org.bukkit.Bukkit.getWorld(world), x, y, z
-                    );
+
+                    Location loc = new Location(Bukkit.getWorld(world), x, y, z);
                     City city = new City(name, nation, loc, population, color, currencyName, mayorId);
 
-                    // Rebuild workers
+                    // Load optional chest location
+                    if (cityData.containsKey("chestX")) {
+                        String chestWorld = (String) cityData.get("chestWorld");
+                        int cx = (int) cityData.get("chestX");
+                        int cy = (int) cityData.get("chestY");
+                        int cz = (int) cityData.get("chestZ");
+                        Location chestLoc = new Location(Bukkit.getWorld(chestWorld), cx, cy, cz);
+                        city.setChestLocation(chestLoc);
+                    }
+
                     List<Map<String, String>> workers = (List<Map<String, String>>) cityData.get("workers");
                     if (workers != null) {
                         for (Map<String, String> w : workers) {
                             String role = w.get("role");
                             String workerName = w.get("name");
-                            Worker worker = WorkerFactory.createWorker(role, city, workerName);
+                            String uuidStr = w.get("uuid");
+                            UUID npcId = uuidStr != null ? UUID.fromString(uuidStr) : UUID.randomUUID();
+                            Worker worker = WorkerFactory.createWorker(role, city, workerName, npcId);
                             city.addWorker(worker);
                         }
                     }
@@ -111,4 +128,3 @@ public class CityYamlLoader {
         return cityMap;
     }
 }
-

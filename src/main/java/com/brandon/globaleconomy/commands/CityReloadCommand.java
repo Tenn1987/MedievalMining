@@ -4,8 +4,6 @@ import com.brandon.globaleconomy.city.*;
 import com.brandon.globaleconomy.config.NameLoader;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,8 +14,8 @@ public class CityReloadCommand implements CommandExecutor {
 
     private final CityManager cityManager;
     private final CityYamlLoader cityYamlLoader;
-    private final NameLoader nameLoader; // Adjust as needed for your worker naming
-    private final WorkerFactory workerFactory; // Adjust as needed
+    private final NameLoader nameLoader;
+    private final WorkerFactory workerFactory;
 
     public CityReloadCommand(CityManager cityManager, CityYamlLoader cityYamlLoader, NameLoader nameLoader, WorkerFactory workerFactory) {
         this.cityManager = cityManager;
@@ -31,24 +29,27 @@ public class CityReloadCommand implements CommandExecutor {
         cityManager.clear();
 
         Map<String, City> loadedCities = cityYamlLoader.loadCities();
-
         for (City city : loadedCities.values()) {
-            cityManager.addCity(city);
-
-            // Optionally, reassign unique worker names
             Set<String> usedNames = new HashSet<>();
             List<Worker> rebuiltWorkers = new ArrayList<>();
-            for (Worker worker : city.getWorkers()) {
-                String workerName = nameLoader.getRandomName(city.getNation(), usedNames);
-                usedNames.add(workerName);
-                // Rebuild worker with new name and add to new list
-                Worker rebuilt = workerFactory.createWorker(worker.getRole(), city, workerName);
-                if (rebuilt != null) rebuiltWorkers.add(rebuilt);
+
+            if (city.getWorkers() != null) {
+                for (Worker oldWorker : city.getWorkers()) {
+                    String workerName = nameLoader.getRandomName(city.getNation(), usedNames);
+                    usedNames.add(workerName);
+
+                    String roleName = oldWorker.getRole().name();
+                    Worker rebuilt = WorkerFactory.createWorker(roleName, city, workerName, oldWorker.getNpcId());
+
+                    if (rebuilt != null) rebuiltWorkers.add(rebuilt);
+                }
+                city.setWorkers(rebuiltWorkers);
             }
-            city.setWorkers(rebuiltWorkers); // You might need to add a setter, or clear/addAll
+
+            cityManager.addCity(city);
         }
 
-        sender.sendMessage("All cities reloaded from disk!");
+        sender.sendMessage("§aAll cities reloaded from disk!");
         return true;
     }
 }

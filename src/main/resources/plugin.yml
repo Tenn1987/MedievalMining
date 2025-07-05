@@ -1,5 +1,5 @@
 name: MedievalMining
-version: 0.0.048
+version: 0.0.050
 main: com.brandon.globaleconomy.core.PluginCore
 api-version: 1.19
 commands:
@@ -38,4 +38,4 @@ commands:
   worker:
     description: Manage workers in a city
     usage: /worker <list|add|remove|info> [city] [workerType] [workerName]
-softdepend: [dynmap]
+softdepend: [dynmap, Citizens]

@@ -20,6 +20,8 @@ public class City implements Serializable {
     private String primaryCurrency; // Replaces 'currencyName'
     private Map<String, Double> treasury = new HashMap<>();
     private List<Worker> workers = new ArrayList<>();
+    private Location chestLocation;
+
 
     // --- Mayor (hybrid) ---
     private UUID mayorId;        // For player mayors
@@ -87,6 +89,11 @@ public class City implements Serializable {
     public String getColor() { return color; }
     public String getPrimaryCurrency() { return primaryCurrency; }
     public List<Worker> getWorkers() { return workers; }
+    public Location getChestLocation() { return chestLocation; }
+
+    public void setChestLocation(Location chestLocation) {
+        this.chestLocation = chestLocation; }
+
 
     public void setPrimaryCurrency(String currency) {
         this.primaryCurrency = currency;

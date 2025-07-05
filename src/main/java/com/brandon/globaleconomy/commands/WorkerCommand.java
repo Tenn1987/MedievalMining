@@ -1,75 +1,74 @@
-
 package com.brandon.globaleconomy.commands;
 
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityManager;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
+import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerManager;
+import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-public class WorkerCommand implements CommandExecutor {
-    private final CityManager cityManager;
-    private final WorkerManager workerManager;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
-    public WorkerCommand(CityManager cityManager, WorkerManager workerManager) {
+public class WorkerCommand implements CommandExecutor {
+
+    private final CityManager cityManager;
+
+    public WorkerCommand(CityManager cityManager) {
         this.cityManager = cityManager;
-        this.workerManager = workerManager;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length >= 2 && args[0].equalsIgnoreCase("list")) {
-            City city = cityManager.getCity(args[1]);
-            if (city == null) {
-                sender.sendMessage(ChatColor.RED + "City not found.");
-                return true;
-            }
-            sender.sendMessage(ChatColor.GOLD + "Workers in " + city.getName() + ":");
-            for (Worker worker : city.getWorkers()) {
+        if (!sender.hasPermission("globaleconomy.admin")) {
+            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            return true;
+        }
+
+        List<Worker> workers = WorkerManager.getInstance().getAllWorkers();
+
+        if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
+            sender.sendMessage(ChatColor.YELLOW + "=== Active Workers (" + workers.size() + ") ===");
+            for (Worker worker : workers) {
                 sender.sendMessage(ChatColor.GRAY + "- " + worker.getName() + " (" + worker.getRole() + ")");
             }
             return true;
         }
 
-        if (args.length >= 4 && args[0].equalsIgnoreCase("add")) {
-            City city = cityManager.getCity(args[1]);
-            if (city == null) {
-                sender.sendMessage(ChatColor.RED + "City not found.");
-                return true;
+        if (args[0].equalsIgnoreCase("role") && args.length >= 2) {
+            String roleFilter = args[1].toUpperCase(Locale.ROOT);
+            try {
+                WorkerRole role = WorkerRole.valueOf(roleFilter);
+                sender.sendMessage(ChatColor.YELLOW + "=== Workers with Role: " + role + " ===");
+                for (Worker worker : workers) {
+                    if (worker.getRole() == role) {
+                        sender.sendMessage(ChatColor.GRAY + "- " + worker.getName());
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                sender.sendMessage(ChatColor.RED + "Invalid role: " + args[1]);
             }
-            String role = args[2].toLowerCase();
-            String name = args[3];
-            Worker worker = workerManager.createWorker(role, city, name);
-            if (worker == null) {
-                sender.sendMessage(ChatColor.RED + "Invalid role: " + role);
-                return true;
-            }
-            sender.sendMessage(ChatColor.GREEN + "Added " + role + " named " + name + " to city " + city.getName());
             return true;
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("remove")) {
-            City city = cityManager.getCity(args[1]);
-            if (city == null) {
-                sender.sendMessage(ChatColor.RED + "City not found.");
-                return true;
-            }
-            String name = args[2];
-            if (city.removeWorkerByName(name)) {
-                sender.sendMessage(ChatColor.YELLOW + "Removed worker named " + name + " from " + city.getName());
+        if (args[0].equalsIgnoreCase("testbuilder")) {
+            City city = cityManager.getCityByName("London"); // Replace "London" with a valid test city name
+            if (city != null) {
+                Worker builder = WorkerFactory.createWorker("builder", city, "Conan", UUID.randomUUID());
+                city.addWorker(builder);
+                sender.sendMessage("Builder worker added to " + city.getName());
             } else {
-                sender.sendMessage(ChatColor.RED + "Worker not found: " + name);
+                sender.sendMessage("City not found.");
             }
             return true;
         }
 
-        sender.sendMessage(ChatColor.RED + "Usage:");
-        sender.sendMessage(ChatColor.GRAY + "/worker list <city>");
-        sender.sendMessage(ChatColor.GRAY + "/worker add <city> <role> <name>");
-        sender.sendMessage(ChatColor.GRAY + "/worker remove <city> <name>");
+        sender.sendMessage(ChatColor.RED + "Unknown subcommand. Try /workers list, /workers role <role>, or /workers testbuilder");
         return true;
     }
 }

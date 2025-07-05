@@ -18,8 +18,10 @@ import com.brandon.globaleconomy.economy.currencies.ExchangeEngine;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.WalletManager;
+import com.brandon.globaleconomy.listeners.MayorJobAssigner;
 import com.brandon.globaleconomy.listeners.RegionBannerListener;
 
+import com.brandon.globaleconomy.listeners.WorkerTradeListener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
@@ -27,6 +29,9 @@ import java.io.File;
 import java.util.*;
 
 public class PluginCore extends JavaPlugin {
+
+    private static PluginCore instance;
+
     private CityManager cityManager;
     private ClaimManager claimManager;
     private DynmapManager dynmapManager;
@@ -42,11 +47,25 @@ public class PluginCore extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
+        instance = this;
+        // === (0) Register custom Citizens trait before any NPCs are created ===
+        try {
+            net.citizensnpcs.api.trait.TraitInfo workerTraitInfo =
+                    net.citizensnpcs.api.trait.TraitInfo.create(com.brandon.globaleconomy.npc.impl.WorkerTrait.class).withName("workertrait");
+            net.citizensnpcs.api.CitizensAPI.getTraitFactory().registerTrait(workerTraitInfo);
+            getLogger().info("WorkerTrait registered successfully.");
+        } catch (Exception e) {
+            getLogger().warning("Failed to register WorkerTrait with Citizens.");
+            e.printStackTrace();
+        }
+
+
         File dataFolder = getDataFolder();
         cityYamlLoader = new CityYamlLoader(dataFolder);
         claimManager = new ClaimManager(1);
         cityManager = new CityManager();
-        workerManager = new WorkerManager();
+        workerManager = WorkerManager.getInstance();
         workerFactory = new WorkerFactory();
         NameLoader nameLoader = new NameLoader(dataFolder);
 
@@ -95,7 +114,8 @@ public class PluginCore extends JavaPlugin {
 
         // === (6) Register listeners ===
         getServer().getPluginManager().registerEvents(new RegionBannerListener(this, claimManager, cityManager), this);
-    }
+        getServer().getPluginManager().registerEvents(new WorkerTradeListener(), this);
+        getServer().getPluginManager().registerEvents(new MayorJobAssigner(), this);    }
 
     @Override
     public void onDisable() {
@@ -106,5 +126,34 @@ public class PluginCore extends JavaPlugin {
 
     public EconomyAPI getEconomyAPI() {
         return economyAPI;
+    }
+
+    // === [ADDED BELOW] ===
+    public static PluginCore getInstance() {
+        return instance;
+    }
+
+    public CityManager getCityManager() {
+        return cityManager;
+    }
+
+    public WorkerManager getWorkerManager() {
+        return workerManager;
+    }
+
+    public WorkerFactory getWorkerFactory() {
+        return workerFactory;
+    }
+
+    public CurrencyManager getCurrencyManager() {
+        return currencyManager;
+    }
+
+    public WalletManager getWalletManager() {
+        return walletManager;
+    }
+
+    public ExchangeEngine getExchangeEngine() {
+        return exchangeEngine;
     }
 }
