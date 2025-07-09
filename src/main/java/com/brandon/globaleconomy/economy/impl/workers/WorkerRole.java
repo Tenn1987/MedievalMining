@@ -8,5 +8,10 @@ public enum WorkerRole {
     MINER,
     FISHERMAN,
     GUARD,
-    BUILDER
-    }
+    BUILDER,
+    FORAGER,
+    DIGGER,
+    RESIDENT,
+    POLETURNER,
+    TOOLMAKER,
+}

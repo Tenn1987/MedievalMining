@@ -49,6 +49,18 @@ public abstract class Worker {
         inventory.put(item, inventory.getOrDefault(item, 0) + item.getAmount());
     }
 
+    protected void consume(String item, int amount) {
+        city.getProductionManager().consume(item, amount);
+    }
+
+    protected void produce(String item, int amount) {
+        city.getProductionManager().produce(item, amount);
+    }
+
+    protected void logWork(String message) {
+        org.bukkit.Bukkit.getLogger().info(getName() + ": " + message);
+    }
+
     public boolean removeFromInventory(ItemStack item, int amount) {
         Integer current = inventory.get(item);
         if (current == null || current < amount) return false;
