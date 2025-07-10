@@ -38,12 +38,15 @@ public abstract class Worker {
     }
 
     public boolean isReadyToWork() {
-        return System.currentTimeMillis() - lastWorkTime > 10000; // 10 sec cooldown
+        return System.currentTimeMillis() - lastWorkTime > cooldownMillis;
     }
 
     public void markCooldown() {
         lastWorkTime = System.currentTimeMillis();
     }
+
+    protected long cooldownMillis = 10000; // Default to 10 sec
+
 
     public void addToInventory(ItemStack item) {
         inventory.put(item, inventory.getOrDefault(item, 0) + item.getAmount());
@@ -68,6 +71,8 @@ public abstract class Worker {
         else inventory.put(item, current - amount);
         return true;
     }
+
+
 
     public boolean hasInInventory(ItemStack item, int amount) {
         return inventory.getOrDefault(item, 0) >= amount;

@@ -113,7 +113,7 @@ public class PluginCore extends JavaPlugin {
 
 
         // === (6) Register listeners ===
-        getServer().getPluginManager().registerEvents(new RegionBannerListener(this, claimManager, cityManager), this);
+        getServer().getPluginManager().registerEvents(new RegionBannerListener(cityManager), this);
         getServer().getPluginManager().registerEvents(new WorkerTradeListener(), this);
         getServer().getPluginManager().registerEvents(new MayorJobAssigner(), this);    }
 

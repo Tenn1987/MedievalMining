@@ -5,10 +5,7 @@ import com.brandon.globaleconomy.economy.impl.workers.*;
 import com.brandon.globaleconomy.npc.impl.NPCSpawner;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.entity.EntityType;
 
 import java.util.*;
@@ -34,6 +31,11 @@ public class CityManager {
 
     public City getCity(String name) {
         return cities.get(name.toLowerCase());
+    }
+
+    public City getCityByChunk(Chunk chunk) {
+        Location loc = chunk.getBlock(0, 0, 0).getLocation();
+        return getCityAt(loc);
     }
 
     public City getCityByName(String name) {

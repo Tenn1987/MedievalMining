@@ -3,6 +3,8 @@ package com.brandon.globaleconomy.economy.impl.workers;
 import com.brandon.globaleconomy.city.City;
 import org.bukkit.Bukkit;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
@@ -13,6 +15,7 @@ public class Merchant extends Worker {
 
     @Override
     public void performWork(City city) {
+        this.cooldownMillis = 15000; // 15 seconds between sales
         if (!isReadyToWork()) return;
 
         double profit = 1.5 + new Random().nextDouble() * 2.0;
@@ -21,4 +24,15 @@ public class Merchant extends Worker {
 
         Bukkit.getLogger().info(getName() + " earned " + profit + " " + currency + " for " + city.getName());
     }
+
+    private static final Map<String, Long> lastLogTime = new HashMap<>();
+
+    protected void rateLimitedLog(String key, String message, long minDelayMillis) {
+        long now = System.currentTimeMillis();
+        if (now - lastLogTime.getOrDefault(key, 0L) > minDelayMillis) {
+            org.bukkit.Bukkit.getLogger().info(message);
+            lastLogTime.put(key, now);
+        }
+    }
+
 }

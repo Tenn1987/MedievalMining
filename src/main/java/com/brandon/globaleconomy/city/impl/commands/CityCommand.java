@@ -6,8 +6,10 @@ import com.brandon.globaleconomy.city.CityYamlLoader;
 import com.brandon.globaleconomy.city.claims.ClaimManager;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
 import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
+import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -50,6 +52,13 @@ public class CityCommand implements CommandExecutor {
                 return true;
             }
 
+            long total = city.getWorkers().size();
+            long unemployed = city.getWorkers().stream()
+                    .filter(w -> w.getRole() == WorkerRole.RESIDENT)
+                    .count();
+            double unemploymentRate = total > 0 ? (double) unemployed / total * 100 : 0.0;
+
+
             player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
             player.sendMessage(ChatColor.GRAY + "Nation: " + city.getNation());
             player.sendMessage(ChatColor.GRAY + "Population: " + city.getPopulation());
@@ -59,10 +68,29 @@ public class CityCommand implements CommandExecutor {
                 player.sendMessage(ChatColor.GRAY + "Parent City: " + city.getParentCityName());
             }
             player.sendMessage(ChatColor.GRAY + "Balance: " + city.getCityBalance(city.getEffectiveCurrency(cityManager)));
-            player.sendMessage(ChatColor.DARK_GREEN + "Resources:");
-            for (Map.Entry<String, Integer> entry : city.getResources().entrySet()) {
+            player.sendMessage(ChatColor.GRAY + "Unemployment Rate: " + String.format("%.1f", unemploymentRate) + "%");
+
+            player.sendMessage(ChatColor.DARK_GREEN + "Top 3 Resources:");
+            city.getResources().entrySet().stream()
+                    .filter(e -> e.getValue() > 0)
+                    .sorted((a, b) -> b.getValue() - a.getValue())
+                    .limit(3)
+                    .forEach(entry -> player.sendMessage(ChatColor.GRAY + "- " + entry.getKey() + ": " + entry.getValue()));
+
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("inventory") && args.length >= 2) {
+            City city = cityManager.getCity(args[1]);
+            if (city == null) {
+                player.sendMessage(ChatColor.RED + "City not found.");
+                return true;
+            }
+
+            player.sendMessage(ChatColor.GOLD + "Inventory for " + city.getName() + ":");
+            for (Map.Entry<Material, Integer> entry : city.getCityInventory().entrySet()) {
                 if (entry.getValue() > 0) {
-                    player.sendMessage(ChatColor.GRAY + "- " + entry.getKey() + ": " + entry.getValue());
+                    player.sendMessage(ChatColor.GRAY + "- " + entry.getKey().name() + ": " + entry.getValue());
                 }
             }
             return true;
@@ -100,6 +128,7 @@ public class CityCommand implements CommandExecutor {
     private void sendUsage(Player player) {
         player.sendMessage(ChatColor.RED + "Invalid usage. Try:");
         player.sendMessage(ChatColor.YELLOW + "/city info <name>");
+        player.sendMessage(ChatColor.YELLOW + "/city inventory <name>");
         player.sendMessage(ChatColor.YELLOW + "/city create <name> <nation> <currency> [parentCity]");
         player.sendMessage(ChatColor.YELLOW + "/city delete <name>");
         player.sendMessage(ChatColor.YELLOW + "/city setcurrency <name> <currency>");

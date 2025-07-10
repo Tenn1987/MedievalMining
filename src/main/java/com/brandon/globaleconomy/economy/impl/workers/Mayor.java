@@ -1,7 +1,6 @@
 package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
-import com.brandon.globaleconomy.economy.impl.workers.*;
 import com.brandon.globaleconomy.npc.impl.WorkerTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
@@ -9,8 +8,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.UUID;
+
 public class Mayor extends Worker {
-    public Mayor(City city, String name, java.util.UUID npcId) {
+    private static final Set<WorkerRole> unemployedRoles = EnumSet.of(WorkerRole.RESIDENT);
+
+    public Mayor(City city, String name, UUID npcId) {
         super(city, name, WorkerRole.MAYOR, npcId);
     }
 
@@ -18,19 +23,21 @@ public class Mayor extends Worker {
     public void performWork(City city) {
         if (!isReadyToWork()) return;
 
+        Bukkit.getLogger().info("Mayor " + name + " is checking NPCs...");
+        Bukkit.getLogger().info("Inventory snapshot: " + city.getAllCityInventory());
+
         Iterable<NPC> npcs = CitizensAPI.getNPCRegistry();
 
         for (NPC npc : npcs) {
             Location loc = npc.getStoredLocation();
             if (loc == null || !loc.getWorld().equals(city.getLocation().getWorld())) continue;
             if (loc.distance(city.getLocation()) > 40) continue;
-
             if (!npc.hasTrait(WorkerTrait.class)) continue;
 
             WorkerTrait trait = npc.getTrait(WorkerTrait.class);
             Worker worker = trait.getWorker();
 
-            if (worker == null || worker.getRole() == WorkerRole.RESIDENT) {
+            if (worker == null || isUnemployed(worker)) {
                 Worker newWorker = autoAssignBasedOnInventory(city, npc);
                 if (newWorker != null) {
                     trait.setWorker(newWorker);
@@ -44,7 +51,13 @@ public class Mayor extends Worker {
         markCooldown();
     }
 
+    private boolean isUnemployed(Worker worker) {
+        return unemployedRoles.contains(worker.getRole());
+    }
+
     private Worker autoAssignBasedOnInventory(City city, NPC npc) {
+        Bukkit.getLogger().info("City inventory: " + city.getAllCityInventory());
+
         if (city.hasItem(Material.IRON_PICKAXE)) {
             city.takeItem(Material.IRON_PICKAXE, 1);
             return new Miner(city, npc.getName(), npc.getUniqueId());

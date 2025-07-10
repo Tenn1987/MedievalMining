@@ -14,8 +14,8 @@ public class WorkerManager {
         return instance;
     }
 
-    public void registerWorker(Worker worker) {
-        allWorkers.add(worker);
+    public void registerWorker(Worker worker) { allWorkers.add(worker);
+        workers.put(worker.getNpcId(), worker);
     }
 
     public List<Worker> getAllWorkers() {

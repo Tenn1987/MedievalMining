@@ -2,6 +2,7 @@ package com.brandon.globaleconomy.city;
 
 import com.brandon.globaleconomy.city.CityProductionManager;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
+import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -74,6 +75,18 @@ public class City implements Serializable {
         this.color = color;
         this.primaryCurrency = currencyName;
     }
+
+    public Map<Material, Integer> getAllCityInventory() {
+        return new HashMap<>(inventory); // ✅ This one has Material keys
+    }
+
+    public double getUnemploymentRate() {
+        long total = workers.size();
+        long unemployed = workers.stream().filter(w -> w.getRole() == WorkerRole.RESIDENT).count();
+        return total > 0 ? (double) unemployed / total * 100 : 0.0;
+    }
+
+
 
     // Getters
     public String getName() { return name; }
