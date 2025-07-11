@@ -1,6 +1,8 @@
 package com.brandon.globaleconomy.listeners;
 
-import com.brandon.globaleconomy.npc.impl.WorkerTradeGUI;
+import com.brandon.globaleconomy.city.City;
+import com.brandon.globaleconomy.city.CityManager;
+import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -8,7 +10,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -16,13 +17,20 @@ import java.util.List;
 
 public class WorkerTradeListener implements Listener {
 
+    private final CityManager cityManager;
+    private final CurrencyManager currencyManager;
+
+    public WorkerTradeListener(CityManager cityManager, CurrencyManager currencyManager) {
+        this.cityManager = cityManager;
+        this.currencyManager = currencyManager;
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) return;
-        Player player = (Player) event.getWhoClicked();
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+
         InventoryView view = event.getView();
         if (!view.getTitle().endsWith("Trade")) return;
-
 
         event.setCancelled(true);
         ItemStack clicked = event.getCurrentItem();
@@ -34,24 +42,32 @@ public class WorkerTradeListener implements Listener {
         List<String> lore = meta.getLore();
         if (lore == null || lore.isEmpty()) return;
 
-        String costLine = lore.get(0);
-        int cost = extractCostFromLore(costLine);
+        int cost = extractCostFromLore(lore.get(0));
 
-        // Placeholder: Deduct 1 emerald per coin
-        if (player.getInventory().contains(Material.EMERALD, cost)) {
-            player.getInventory().removeItem(new ItemStack(Material.EMERALD, cost));
+        City city = cityManager.getCityAt(player.getLocation());
+        if (city == null) {
+            player.sendMessage(ChatColor.RED + "You're not inside a city.");
+            return;
+        }
+
+        String currencyName = city.getEffectiveCurrency(null);
+        Material currencyMaterial = currencyManager.getCurrencyMaterial(currencyName);
+
+        if (player.getInventory().contains(currencyMaterial, cost)) {
+            player.getInventory().removeItem(new ItemStack(currencyMaterial, cost));
             player.getInventory().addItem(new ItemStack(clicked.getType(), 1));
+            city.depositToTreasury(currencyName, cost);
             player.sendMessage(ChatColor.GREEN + "Trade successful!");
         } else {
-            player.sendMessage(ChatColor.RED + "Not enough emeralds!");
+            player.sendMessage(ChatColor.RED + "Not enough " + currencyMaterial.name() + "!");
         }
 
         player.closeInventory();
     }
 
-    private int extractCostFromLore(String lore) {
+    private int extractCostFromLore(String loreLine) {
         try {
-            return Integer.parseInt(lore.replaceAll("[^0-9]", ""));
+            return Integer.parseInt(loreLine.replaceAll("[^0-9]", ""));
         } catch (NumberFormatException e) {
             return Integer.MAX_VALUE;
         }

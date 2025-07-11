@@ -32,4 +32,13 @@ public class WalletManager {
     public Map<String, Double> getAllBalances(UUID playerId) {
         return new HashMap<>(wallets.getOrDefault(playerId, new HashMap<>()));
     }
+
+    public boolean hasWallet(UUID playerId) {
+        return wallets.containsKey(playerId);
+    }
+
+    public Map<String, Double> getWallet(UUID playerId) {
+        return wallets.get(playerId);
+    }
+
 }

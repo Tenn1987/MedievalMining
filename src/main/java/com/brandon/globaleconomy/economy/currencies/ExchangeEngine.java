@@ -1,27 +1,38 @@
 package com.brandon.globaleconomy.economy.currencies;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.brandon.globaleconomy.core.PluginCore;
 
 public class ExchangeEngine {
-    private final Map<String, Map<String, Double>> rates = new HashMap<>();
 
-    public void addCurrency(String currency) {
-        rates.putIfAbsent(currency, new HashMap<>());
-        for (String other : rates.keySet()) {
-            if (!other.equals(currency)) {
-                double rate = Math.random() * 0.5 + 0.75; // 0.75 - 1.25
-                rates.get(currency).put(other, rate);
-                rates.get(other).put(currency, 1.0 / rate);
-            }
-        }
+    private final ExchangeRateManager exchangeRateManager = ExchangeRateManager.getInstance();
+
+    public ExchangeRateManager getExchangeRateManager() {
+        return exchangeRateManager;
     }
 
     public double getRate(String from, String to) {
-        return rates.getOrDefault(from, Map.of()).getOrDefault(to, 1.0);
+        return exchangeRateManager.getExchangeRate(from, to);
     }
 
     public double convert(String from, String to, double amount) {
         return amount * getRate(from, to);
     }
+
+    public void addCurrency(String currency) {
+        NationalCurrency nationalCurrency = PluginCore.getInstance().getCurrencyManager().getCurrency(currency);
+        if (nationalCurrency == null) return;
+
+        String code = nationalCurrency.getName();
+        double value = nationalCurrency.isMetalBacked()
+                ? nationalCurrency.getBackingRatio() // or a calculated value
+                : 1.0;
+        String backingMaterial = nationalCurrency.getBackingMaterial() != null
+                ? nationalCurrency.getBackingMaterial()
+                : "FIAT";
+
+        if (!ExchangeRateManager.getInstance().getAllRates(code).containsKey(code)) {
+            ExchangeRateManager.getInstance().registerCurrency(code, value, backingMaterial);
+        }
+    }
+
 }

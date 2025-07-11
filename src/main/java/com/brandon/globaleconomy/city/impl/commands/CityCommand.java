@@ -6,6 +6,7 @@ import com.brandon.globaleconomy.city.CityYamlLoader;
 import com.brandon.globaleconomy.city.claims.ClaimManager;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
 import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
+import com.brandon.globaleconomy.economy.currencies.ExchangeRateManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -112,6 +113,10 @@ public class CityCommand implements CommandExecutor {
             String nation = args[2];
             String currency = args[3];
             String parentCity = args.length >= 5 ? args[4] : null;
+
+            if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
+                ExchangeRateManager.getInstance().registerCurrency(currency, 1.0,  "GOLD");
+            }
 
             Location loc = player.getLocation();
             cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);

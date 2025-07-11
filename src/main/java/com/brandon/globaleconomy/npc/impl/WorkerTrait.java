@@ -5,7 +5,7 @@ import com.brandon.globaleconomy.core.PluginCore;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
-import net.citizensnpcs.api.npc.NPC;
+import com.brandon.globaleconomy.gui.WorkerTradeGUI;
 import net.citizensnpcs.api.trait.Trait;
 import net.citizensnpcs.api.trait.TraitName;
 import net.citizensnpcs.api.util.DataKey;

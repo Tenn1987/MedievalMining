@@ -16,6 +16,15 @@ public class NationalCurrency {
         this.supply = 0.0;
     }
 
+    public double getValue(MetalPool metalPool) {
+        if (metalBacked && backingMaterial != null && backingRatio > 0) {
+            double metalPrice = metalPool.getValueOf(backingMaterial);
+            return metalPrice * backingRatio;
+        }
+        return 1.0; // Default fiat value
+    }
+
+
     public String getName() {
         return name;
     }
@@ -39,4 +48,6 @@ public class NationalCurrency {
     public void setSupply(double supply) {
         this.supply = supply;
     }
+
+    public void adjustValueFromBacking(int amount) {}
 }

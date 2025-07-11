@@ -121,6 +121,10 @@ public class City implements Serializable {
     public void setParentCityName(String parentCityName) { this.parentCityName = parentCityName; }
     public void setForceUseParentCurrency(boolean force) { this.forceUseParentCurrency = force; }
     public void setColor(String color) { this.color = color; }
+    public void removeItem(Material material, int amount) {
+        cityInventory.removeItem(material, amount);
+    }
+
 
     public String getEffectiveCurrency(CityManager cityManager) {
         if (forceUseParentCurrency && parentCityName != null) {

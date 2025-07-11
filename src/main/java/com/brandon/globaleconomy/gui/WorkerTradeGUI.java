@@ -1,4 +1,4 @@
-package com.brandon.globaleconomy.npc.impl;
+package com.brandon.globaleconomy.gui;
 
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;

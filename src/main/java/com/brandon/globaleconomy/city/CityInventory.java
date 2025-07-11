@@ -1,4 +1,3 @@
-
 package com.brandon.globaleconomy.city;
 
 import org.bukkit.Material;
@@ -32,5 +31,10 @@ public class CityInventory {
 
     public boolean has(Material material, int amount) {
         return getQuantity(material) >= amount;
+    }
+
+    public void removeItem(Material material, int amount) {
+        int current = inventory.getOrDefault(material, 0);
+        inventory.put(material, Math.max(current - amount, 0));
     }
 }

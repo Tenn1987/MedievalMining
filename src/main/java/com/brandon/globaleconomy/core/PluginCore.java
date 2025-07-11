@@ -6,10 +6,7 @@ import com.brandon.globaleconomy.city.CityYamlLoader;
 import com.brandon.globaleconomy.city.claims.ClaimManager;
 import com.brandon.globaleconomy.city.impl.commands.CityCommand;
 import com.brandon.globaleconomy.city.impl.commands.CityTreasuryCommand;
-import com.brandon.globaleconomy.commands.CityReloadCommand;
-import com.brandon.globaleconomy.commands.CitySaveCommand;
-import com.brandon.globaleconomy.commands.CurrencyCommand;
-import com.brandon.globaleconomy.commands.WalletCommand;
+import com.brandon.globaleconomy.commands.*;
 import com.brandon.globaleconomy.config.NameLoader;
 import com.brandon.globaleconomy.dynmap.DynmapManager;
 import com.brandon.globaleconomy.economy.api.EconomyAPI;
@@ -18,10 +15,10 @@ import com.brandon.globaleconomy.economy.currencies.ExchangeEngine;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.WalletManager;
-import com.brandon.globaleconomy.listeners.MayorJobAssigner;
-import com.brandon.globaleconomy.listeners.RegionBannerListener;
+import com.brandon.globaleconomy.gui.MerchantTradeGUI;
+import com.brandon.globaleconomy.gui.MoneyChangerGUI;
+import com.brandon.globaleconomy.listeners.*;
 
-import com.brandon.globaleconomy.listeners.WorkerTradeListener;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
@@ -71,9 +68,15 @@ public class PluginCore extends JavaPlugin {
 
         // === (1) Initialize Economy Components ===
         walletManager = new WalletManager();
+
         currencyManager = new CurrencyManager();
+        MerchantTradeGUI.setCurrencyManager(currencyManager);
+        MoneyChangerGUI.setManagers(currencyManager, walletManager);
+
         exchangeEngine = new ExchangeEngine();
+
         economyAPI = new EconomyAPI(walletManager, currencyManager, exchangeEngine, cityManager);
+
 
         // === (2) Initialize DynmapManager FIRST ===
         DynmapAPI dynmapAPI = null;
@@ -110,12 +113,33 @@ public class PluginCore extends JavaPlugin {
         getCommand("currency").setExecutor(new CurrencyCommand(currencyManager, cityManager));
         getCommand("wallet").setExecutor(new WalletCommand(walletManager)); // NEW wallet command
         getCommand("citytreasury").setExecutor(new CityTreasuryCommand(cityManager));
+        getCommand("money").setExecutor(new WalletCommand(walletManager));
+        getCommand("balance").setExecutor(new WalletCommand(walletManager));
+        getCommand("pay").setExecutor(new PayCommand(walletManager)); // assuming you have this class
+
 
 
         // === (6) Register listeners ===
         getServer().getPluginManager().registerEvents(new RegionBannerListener(cityManager), this);
-        getServer().getPluginManager().registerEvents(new WorkerTradeListener(), this);
-        getServer().getPluginManager().registerEvents(new MayorJobAssigner(), this);    }
+        getServer().getPluginManager().registerEvents(new WorkerTradeListener(cityManager, currencyManager), this);
+        getServer().getPluginManager().registerEvents(new MayorJobAssigner(), this);
+        getServer().getPluginManager().registerEvents(new NPCClickListener(getCityManager()), this);
+        getServer().getPluginManager().registerEvents(new MerchantGUIListener(getCityManager()), this);
+        getServer().getPluginManager().registerEvents(new MoneyChangerListener(), this);
+
+
+        // === (7) Schedule dynamic currency exchange updates ===
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                for (var currency : currencyManager.getCurrencies().values()) {
+                    double newValue = currency.getValue(currencyManager.getMetalPool());
+                    exchangeEngine.getExchangeRateManager().updateValue(currency.getName(), newValue);
+                }
+            }
+        }.runTaskTimer(this, 0L, 1200L); // Runs every 60 seconds (1200 ticks)
+
+    }
 
     @Override
     public void onDisable() {

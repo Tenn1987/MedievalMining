@@ -1,12 +1,15 @@
 package com.brandon.globaleconomy.city;
 
 import com.brandon.globaleconomy.city.claims.ClaimManager;
+import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
 import com.brandon.globaleconomy.economy.impl.workers.*;
 import com.brandon.globaleconomy.npc.impl.NPCSpawner;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.*;
 import org.bukkit.entity.EntityType;
+import org.bukkit.Location;
+import org.bukkit.World;
 
 import java.util.*;
 
@@ -185,10 +188,20 @@ public class CityManager {
         buildBellPedestal(location);
     }
 
-    public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color, String currencyName, String parentCityName) {
+    public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color,
+                                    String currencyName, String parentCityName,
+                                    boolean metalBacked, String backingMaterial, double backingRatio) {
+        // Create currency if it doesn't exist
+        CurrencyManager currencyManager = CurrencyManager.getInstance();
+        if (!currencyManager.hasCurrency(currencyName)) {
+            currencyManager.createCurrency(currencyName, metalBacked, backingMaterial, backingRatio);
+        }
+
+        // Create Mayor NPC
         NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name + "_Mayor");
         int mayorNpcId = npc.getId();
 
+        // Create and configure city
         City city = new City(name, nation, location, population, color, currencyName, mayorNpcId);
         city.setParentCityName(parentCityName);
         city.setForceUseParentCurrency(parentCityName != null);
