@@ -61,8 +61,11 @@ public class CityManager {
         for (int i = 1; i <= 4; i++) {
             Worker resident = new Resident(city, "Resident_" + i + "_" + city.getName(), UUID.randomUUID());
             WorkerManager.getInstance().registerWorker(resident);
+            city.addWorker(resident); // 🔥 FIX: now they count toward unemployment
             NPCSpawner.spawnWorkerNpc(resident, city.getLocation().clone().add(i - 2, 1, 2));
+            Bukkit.getLogger().info(city.getName() + " initialized with unemployment rate: " + city.getUnemploymentRate() + "%");
         }
+
 
         Location baseSpawn = city.getLocation();
         Location[] spawnOffsets = new Location[] {

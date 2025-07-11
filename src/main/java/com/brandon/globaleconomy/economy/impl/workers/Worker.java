@@ -1,8 +1,9 @@
 package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
+import net.citizensnpcs.api.npc.NPC;
+import net.citizensnpcs.api.CitizensAPI;
 import org.bukkit.inventory.ItemStack;
-
 import java.util.*;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ public abstract class Worker {
     protected final WorkerRole role;
     protected final Map<ItemStack, Integer> inventory = new HashMap<>();
     protected long lastWorkTime = 0;
+    protected long cooldownMillis = 10000; // Default to 10 sec
 
     public Worker(City city, String name, WorkerRole role, UUID npcId) {
         this.city = city;
@@ -45,9 +47,6 @@ public abstract class Worker {
         lastWorkTime = System.currentTimeMillis();
     }
 
-    protected long cooldownMillis = 10000; // Default to 10 sec
-
-
     public void addToInventory(ItemStack item) {
         inventory.put(item, inventory.getOrDefault(item, 0) + item.getAmount());
     }
@@ -72,9 +71,11 @@ public abstract class Worker {
         return true;
     }
 
-
-
     public boolean hasInInventory(ItemStack item, int amount) {
         return inventory.getOrDefault(item, 0) >= amount;
+    }
+
+    public NPC getNpc() {
+        return CitizensAPI.getNPCRegistry().getByUniqueIdGlobal(npcId);
     }
 }

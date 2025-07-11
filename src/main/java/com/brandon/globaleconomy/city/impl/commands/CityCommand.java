@@ -59,6 +59,7 @@ public class CityCommand implements CommandExecutor {
             double unemploymentRate = total > 0 ? (double) unemployed / total * 100 : 0.0;
 
 
+
             player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
             player.sendMessage(ChatColor.GRAY + "Nation: " + city.getNation());
             player.sendMessage(ChatColor.GRAY + "Population: " + city.getPopulation());
