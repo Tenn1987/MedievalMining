@@ -3,6 +3,7 @@ package com.brandon.globaleconomy.economy.impl.workers;
 import com.brandon.globaleconomy.city.City;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.CitizensAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import java.util.*;
 import java.util.UUID;
@@ -59,8 +60,14 @@ public abstract class Worker {
         city.getProductionManager().produce(item, amount);
     }
 
-    protected void logWork(String message) {
-        org.bukkit.Bukkit.getLogger().info(getName() + ": " + message);
+    private static final Map<String, Long> lastLogTime = new HashMap<>();
+
+    protected void rateLimitedLog(String key, String message, long minDelayMillis) {
+        long now = System.currentTimeMillis();
+        if (now - lastLogTime.getOrDefault(key, 0L) > minDelayMillis) {
+            Bukkit.getLogger().info(message);
+            lastLogTime.put(key, now);
+        }
     }
 
     public boolean removeFromInventory(ItemStack item, int amount) {
@@ -78,4 +85,9 @@ public abstract class Worker {
     public NPC getNpc() {
         return CitizensAPI.getNPCRegistry().getByUniqueIdGlobal(npcId);
     }
+
+    public boolean isTrulyEmployed() {
+        return role != null && role != WorkerRole.RESIDENT;
+    }
+
 }

@@ -6,13 +6,18 @@ import org.bukkit.Bukkit;
 import java.util.UUID;
 
 public class Resident extends Worker {
+
+    private int workLogCooldown = 0; // Correctly placed field
+
     public Resident(City city, String name, UUID npcId) {
         super(city, name, WorkerRole.RESIDENT, npcId);
     }
 
     @Override
     public void performWork(City city) {
-        // Idle or eventually visit public spaces or houses
-        Bukkit.getLogger().info(getName() + " is living peacefully in " + city.getName());
+        if (workLogCooldown-- <= 0) {
+            Bukkit.getLogger().info(getName() + " is living peacefully in " + city.getName());
+            workLogCooldown = 100; // Log once every 5 seconds (assuming 20 ticks/sec)
+        }
     }
 }

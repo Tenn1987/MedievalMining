@@ -39,7 +39,7 @@ public class Poleturner extends Worker {
         manager.recordProduction("STICK", 8);
         city.addItem(org.bukkit.Material.STICK, 8);
 
-        logWork("converted 1x " + availableLog + " into 8 sticks.");
+        rateLimitedLog(getName(), "Poleturner " + getName() + " is crafting sticks for " + city.getName(), 5000);
         markCooldown();
     }
 }

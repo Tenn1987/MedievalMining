@@ -26,7 +26,7 @@ public class MayorJobAssigner implements Listener {
         WorkerTrait trait = npc.getTrait(WorkerTrait.class);
         Worker current = trait.getWorker();
 
-        if (current != null && current.getRole() != WorkerRole.MAYOR) {
+        if (current != null && current.getRole() != WorkerRole.RESIDENT && current.getRole() != WorkerRole.MAYOR) {
             event.getPlayer().sendMessage("§cThis NPC is already employed as a " + current.getRole());
             return;
         }

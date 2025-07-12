@@ -74,12 +74,15 @@ public class WorkerTrait extends Trait implements Listener {
             WorkerRole role = WorkerRole.valueOf(roleStr);
             UUID npcId = UUID.fromString(uuidStr);
 
-            City city = PluginCore.getInstance().getCityManager().getCity(cityName);
-            if (city != null) {
-                this.worker = WorkerFactory.createWorker(role, city, name, npcId);
-            } else {
-                System.err.println("[WorkerTrait] Could not find city '" + cityName + "' during load.");
-            }
+            Bukkit.getScheduler().runTaskLater(JavaPlugin.getProvidingPlugin(getClass()), () -> {
+                City city = PluginCore.getInstance().getCityManager().getCity(cityName);
+                if (city != null) {
+                    this.worker = WorkerFactory.createWorker(role, city, name, npcId);
+                } else {
+                    System.err.println("[WorkerTrait] Could not find city '" + cityName + "' even after delayed lookup.");
+                }
+            }, 20L); // Delay 1 second
+
         } catch (Exception e) {
             System.err.println("[WorkerTrait] Error loading trait data: " + e.getMessage());
         }

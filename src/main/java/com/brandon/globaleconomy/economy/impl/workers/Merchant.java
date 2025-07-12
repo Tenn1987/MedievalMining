@@ -18,21 +18,15 @@ public class Merchant extends Worker {
         this.cooldownMillis = 15000; // 15 seconds between sales
         if (!isReadyToWork()) return;
 
+        // Simulate earning
         double profit = 1.5 + new Random().nextDouble() * 2.0;
         String currency = city.getPrimaryCurrency();
         city.depositToTreasury(currency, profit);
 
-        Bukkit.getLogger().info(getName() + " earned " + profit + " " + currency + " for " + city.getName());
+
+        // Log with rate limiter
+        String logKey = getName() + "_" + city.getName(); // unique per worker+city
+        String message = getName() + " earned " + profit + " " + currency + " for " + city.getName();
+        rateLimitedLog(logKey, message, 5000); // only log once every 5 seconds
     }
-
-    private static final Map<String, Long> lastLogTime = new HashMap<>();
-
-    protected void rateLimitedLog(String key, String message, long minDelayMillis) {
-        long now = System.currentTimeMillis();
-        if (now - lastLogTime.getOrDefault(key, 0L) > minDelayMillis) {
-            org.bukkit.Bukkit.getLogger().info(message);
-            lastLogTime.put(key, now);
-        }
-    }
-
 }

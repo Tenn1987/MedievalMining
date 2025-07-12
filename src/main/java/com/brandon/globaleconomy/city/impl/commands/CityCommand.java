@@ -11,12 +11,14 @@ import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
+import java.util.Set;
 
 public class CityCommand implements CommandExecutor {
     private final CityManager cityManager;
@@ -114,15 +116,48 @@ public class CityCommand implements CommandExecutor {
             String currency = args[3];
             String parentCity = args.length >= 5 ? args[4] : null;
 
-            if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
-                ExchangeRateManager.getInstance().registerCurrency(currency, 1.0,  "GOLD");
+            // Determine backing material
+            String backingInput = args.length >= 6 ? args[5].toUpperCase() : "GOLD_INGOT";
+            Material backingMaterial = Material.matchMaterial(backingInput);
+            if (backingMaterial == null || !Set.of(
+                    Material.GOLD_INGOT,
+                    Material.IRON_INGOT,
+                    Material.COPPER_INGOT,
+                    Material.EMERALD,
+                    Material.DIAMOND,
+                    Material.NETHERITE_INGOT
+            ).contains(backingMaterial)) {
+                player.sendMessage(ChatColor.RED + "Invalid or unsupported backing material.");
+                player.sendMessage(ChatColor.YELLOW + "Allowed: GOLD_INGOT, IRON_INGOT, COPPER_INGOT, EMERALD, DIAMOND, NETHERITE_INGOT");
+                return true;
             }
 
+            // Register currency if new
+            if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
+                ExchangeRateManager.getInstance().registerCurrency(currency, 1.0, backingMaterial.name());
+            }
+
+            // Create city
             Location loc = player.getLocation();
             cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);
             cityYamlLoader.saveCities(cityManager.getCities());
             claimManager.claimChunksForCity(cityManager.getCity(name));
             dynmapManager.addOrUpdateCityAreaPolygon(cityManager.getCity(name), claimManager.getChunksForCity(cityManager.getCity(name)));
+            City city = cityManager.getCity(name);
+
+            // Try to auto-detect chest
+            Block target = player.getTargetBlockExact(5);
+            if (target != null && target.getType() == Material.CHEST) {
+                city.setChestLocation(target.getLocation());
+                cityYamlLoader.saveCities(cityManager.getCities());
+                player.sendMessage(ChatColor.YELLOW + "Chest automatically set at: " +
+                        target.getLocation().getBlockX() + ", " +
+                        target.getLocation().getBlockY() + ", " +
+                        target.getLocation().getBlockZ());
+            } else {
+                player.sendMessage(ChatColor.RED + "No nearby chest found. Use /city setchest " + name + " manually.");
+            }
+
             player.sendMessage(ChatColor.GREEN + "City '" + name + "' created.");
             return true;
         }
@@ -135,8 +170,10 @@ public class CityCommand implements CommandExecutor {
         player.sendMessage(ChatColor.RED + "Invalid usage. Try:");
         player.sendMessage(ChatColor.YELLOW + "/city info <name>");
         player.sendMessage(ChatColor.YELLOW + "/city inventory <name>");
-        player.sendMessage(ChatColor.YELLOW + "/city create <name> <nation> <currency> [parentCity]");
+        player.sendMessage(ChatColor.YELLOW + "/city create <name> <nation> <currency> [parentCity] [backingMaterial]");
         player.sendMessage(ChatColor.YELLOW + "/city delete <name>");
         player.sendMessage(ChatColor.YELLOW + "/city setcurrency <name> <currency>");
+        player.sendMessage(ChatColor.YELLOW + "/city setchest <name>"); // <-- add this line
     }
+
 }
