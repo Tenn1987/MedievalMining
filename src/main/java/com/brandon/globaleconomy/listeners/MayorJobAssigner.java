@@ -15,6 +15,10 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class MayorJobAssigner implements Listener {
+    private String capitalize(String input) {
+        return input.substring(0, 1).toUpperCase() + input.substring(1).toLowerCase();
+    }
+
 
     @EventHandler
     public void onAssignJob(PlayerInteractEntityEvent event) {
@@ -63,6 +67,12 @@ public class MayorJobAssigner implements Listener {
 
         trait.setWorker(newWorker);
         WorkerManager.getInstance().registerWorker(newWorker);
-        player.sendMessage("§aAssigned " + newWorker.getRole() + " to NPC " + npc.getName());
+
+// Update name: "Ali (Farmer)"
+        String displayName = newWorker.getName() + " (" + capitalize(newWorker.getRole().name()) + ")";
+        npc.setName(displayName);
+
+        player.sendMessage("§aAssigned " + newWorker.getRole() + " to NPC " + displayName);
+
     }
 }

@@ -90,4 +90,12 @@ public abstract class Worker {
         return role != null && role != WorkerRole.RESIDENT;
     }
 
+
+    public void updateNPCName() {
+        NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(this.npcId);
+        if (npc != null) {
+            npc.setName(name + " (" + role.name().charAt(0) + role.name().substring(1).toLowerCase() + ")");
+        }
+    }
+
 }

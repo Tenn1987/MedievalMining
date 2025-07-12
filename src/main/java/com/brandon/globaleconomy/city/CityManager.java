@@ -50,6 +50,12 @@ public class CityManager {
         cityByName.put(city.getName(), city);
         city.scanForResources(48);
 
+        // Prevent duplication: only spawn defaults if city has no workers yet
+        if (!city.getWorkers().isEmpty()) {
+            Bukkit.getLogger().info("City " + city.getName() + " already has workers, skipping default spawn.");
+            return;
+        }
+
         UUID mayorId = UUID.randomUUID();
         Worker mayor = new Mayor(city, "Mayor_" + city.getName(), mayorId);
         Worker farmer = new Farmer(city, "Farmer_" + city.getName(), UUID.randomUUID());
@@ -64,11 +70,9 @@ public class CityManager {
         for (int i = 1; i <= 4; i++) {
             Worker resident = new Resident(city, "Resident_" + i + "_" + city.getName(), UUID.randomUUID());
             WorkerManager.getInstance().registerWorker(resident);
-            city.addWorker(resident); // 🔥 FIX: now they count toward unemployment
+            city.addWorker(resident); // 🔥 ensures they count
             NPCSpawner.spawnWorkerNpc(resident, city.getLocation().clone().add(i - 2, 1, 2));
-            Bukkit.getLogger().info(city.getName() + " initialized with unemployment rate: " + city.getUnemploymentRate() + "%");
         }
-
 
         Location baseSpawn = city.getLocation();
         Location[] spawnOffsets = new Location[] {
@@ -82,7 +86,10 @@ public class CityManager {
         NPCSpawner.spawnWorkerNpc(farmer, spawnOffsets[1]);
         NPCSpawner.spawnWorkerNpc(woodsman, spawnOffsets[2]);
         NPCSpawner.spawnWorkerNpc(merchant, spawnOffsets[3]);
+
+        Bukkit.getLogger().info(city.getName() + " initialized with unemployment rate: " + city.getUnemploymentRate() + "%");
     }
+
 
     private int countBedsNear(Location center) {
         int radius = 50;

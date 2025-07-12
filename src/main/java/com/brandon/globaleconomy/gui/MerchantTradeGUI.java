@@ -88,8 +88,32 @@ public class MerchantTradeGUI {
         }
 
         // SELL to city (slot 26)
+        // SELL to city (slot 26)
         if (slot == SELL_SLOT) {
             int totalEarned = 0;
+            int affordableAmount = (int) city.getCityBalance(city.getEffectiveCurrency(null));
+            // already defined earlier, so skip re-declaring
+
+
+            // First, calculate potential total payout
+            for (int i = 18; i < 26; i++) {
+                ItemStack sellItem = e.getInventory().getItem(i);
+                if (sellItem == null || sellItem.getType() == Material.AIR) continue;
+
+                MarketItem marketItem = MarketAPI.getInstance().getItem(sellItem.getType());
+                if (marketItem == null) continue;
+
+                totalEarned += (int) (marketItem.getSellPrice() * sellItem.getAmount());
+            }
+
+            // Check if city has enough money
+            if (affordableAmount < totalEarned) {
+                player.sendMessage("§cThe merchant doesn't have enough money to buy all your goods.");
+                return;
+            }
+
+            // Proceed with transaction
+            int confirmedPayout = 0;
             for (int i = 18; i < 26; i++) {
                 ItemStack sellItem = e.getInventory().getItem(i);
                 if (sellItem == null || sellItem.getType() == Material.AIR) continue;
@@ -100,19 +124,20 @@ public class MerchantTradeGUI {
                 if (marketItem == null) continue;
 
                 int payout = (int) (marketItem.getSellPrice() * amount);
-                totalEarned += payout;
+                confirmedPayout += payout;
 
                 city.addItem(mat, amount);
                 e.getInventory().setItem(i, null);
             }
 
-            if (totalEarned > 0) {
-                player.getInventory().addItem(new ItemStack(currencyMaterial, totalEarned));
-                city.withdrawFromTreasury(city.getEffectiveCurrency(null), totalEarned);
-                player.sendMessage("§aSold items for " + totalEarned + " " + currencyMaterial.name());
+            if (confirmedPayout > 0) {
+                player.getInventory().addItem(new ItemStack(currencyMaterial, confirmedPayout));
+                city.withdrawFromTreasury(city.getEffectiveCurrency(null), confirmedPayout);
+                player.sendMessage("§aSold items for " + confirmedPayout + " " + currencyMaterial.name());
             } else {
                 player.sendMessage("§cNo valid items to sell.");
             }
         }
+
     }
 }

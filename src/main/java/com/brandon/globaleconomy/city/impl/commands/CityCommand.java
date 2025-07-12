@@ -121,7 +121,9 @@ public class CityCommand implements CommandExecutor {
             Material backingMaterial = Material.matchMaterial(backingInput);
             if (backingMaterial == null || !Set.of(
                     Material.GOLD_INGOT,
+                    Material.GOLD_NUGGET,
                     Material.IRON_INGOT,
+                    Material.IRON_NUGGET,
                     Material.COPPER_INGOT,
                     Material.EMERALD,
                     Material.DIAMOND,
