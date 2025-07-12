@@ -50,7 +50,21 @@ public class CityManager {
         cityByName.put(city.getName(), city);
         city.scanForResources(48);
 
-        // Prevent duplication: only spawn defaults if city has no workers yet
+        Location center = city.getLocation();
+        World world = center.getWorld();
+        int radius = 48;
+
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                for (int y = center.getBlockY() - 10; y <= center.getBlockY() + 10; y++) {
+                    Material type = world.getBlockAt(center.clone().add(x, y, z)).getType();
+                    if (type == Material.DEAD_BUSH) {
+                        city.addResource("STICK", 1);
+                    }
+                }
+            }
+        }
+
         if (!city.getWorkers().isEmpty()) {
             Bukkit.getLogger().info("City " + city.getName() + " already has workers, skipping default spawn.");
             return;
@@ -70,9 +84,14 @@ public class CityManager {
         for (int i = 1; i <= 4; i++) {
             Worker resident = new Resident(city, "Resident_" + i + "_" + city.getName(), UUID.randomUUID());
             WorkerManager.getInstance().registerWorker(resident);
-            city.addWorker(resident); // 🔥 ensures they count
+            city.addWorker(resident);
             NPCSpawner.spawnWorkerNpc(resident, city.getLocation().clone().add(i - 2, 1, 2));
         }
+
+        city.addWorker(mayor);
+        city.addWorker(farmer);
+        city.addWorker(woodsman);
+        city.addWorker(merchant);
 
         Location baseSpawn = city.getLocation();
         Location[] spawnOffsets = new Location[] {
@@ -90,14 +109,13 @@ public class CityManager {
         Bukkit.getLogger().info(city.getName() + " initialized with unemployment rate: " + city.getUnemploymentRate() + "%");
     }
 
-
-    private int countBedsNear(Location center) {
+    public int countBedsNear(Location center) {
         int radius = 50;
         int bedCount = 0;
         World world = center.getWorld();
 
         for (int x = -radius; x <= radius; x++) {
-            for (int y = -5; y <= 5; y++) { // vertical range to avoid scanning full height
+            for (int y = -5; y <= 5; y++) {
                 for (int z = -radius; z <= radius; z++) {
                     Material blockType = world.getBlockAt(center.clone().add(x, y, z)).getType();
                     if (blockType.name().endsWith("_BED")) {
@@ -106,7 +124,6 @@ public class CityManager {
                 }
             }
         }
-
         return bedCount;
     }
 
@@ -126,8 +143,6 @@ public class CityManager {
             spawnResident(city);
         }
     }
-
-
 
     private void spawnResident(City city) {
         UUID id = UUID.randomUUID();
@@ -198,17 +213,14 @@ public class CityManager {
     public void addCityWithNpcMayor(String name, String nation, Location location, int population, String color,
                                     String currencyName, String parentCityName,
                                     boolean metalBacked, String backingMaterial, double backingRatio) {
-        // Create currency if it doesn't exist
         CurrencyManager currencyManager = CurrencyManager.getInstance();
         if (!currencyManager.hasCurrency(currencyName)) {
             currencyManager.createCurrency(currencyName, metalBacked, backingMaterial, backingRatio);
         }
 
-        // Create Mayor NPC
         NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name + "_Mayor");
         int mayorNpcId = npc.getId();
 
-        // Create and configure city
         City city = new City(name, nation, location, population, color, currencyName, mayorNpcId);
         city.setParentCityName(parentCityName);
         city.setForceUseParentCurrency(parentCityName != null);

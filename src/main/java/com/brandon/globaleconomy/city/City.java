@@ -86,6 +86,11 @@ public class City implements Serializable {
         return total > 0 ? (double) unemployed / total * 100 : 0.0;
     }
 
+    public void addResource(String name, int amount) {
+        resources.put(name, resources.getOrDefault(name, 0) + amount);
+    }
+
+
 
 
     // Getters
@@ -276,4 +281,9 @@ public class City implements Serializable {
     public Map<Material, Integer> getCityInventory() {
         return inventory;
     }
+
+    public void log(String message) {
+        Bukkit.getLogger().info("[City: " + getName() + "] " + message);
+    }
+
 }

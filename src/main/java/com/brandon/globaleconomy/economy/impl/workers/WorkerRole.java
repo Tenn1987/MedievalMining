@@ -1,17 +1,18 @@
 package com.brandon.globaleconomy.economy.impl.workers;
 
 public enum WorkerRole {
-    FARMER,
-    WOODSMAN,
-    MERCHANT,
-    MAYOR,
-    MINER,
-    FISHERMAN,
-    GUARD,
     BUILDER,
-    FORAGER,
+    CARAVANER,
     DIGGER,
-    RESIDENT,
+    FARMER,
+    FISHERMAN,
+    FORAGER,
+    GUARD,
+    MAYOR,
+    MERCHANT,
+    MINER,
     POLETURNER,
+    RESIDENT,
     TOOLMAKER,
+    WOODSMAN,
 }

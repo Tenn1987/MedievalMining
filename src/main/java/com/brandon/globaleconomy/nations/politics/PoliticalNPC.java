@@ -1,6 +1,4 @@
-package com.brandon.globaleconomy.npcnation.politics;
-
-import java.util.UUID;
+package com.brandon.globaleconomy.nations.politics;
 
 public class PoliticalNPC {
     private final int npcId; // Citizens NPC ID

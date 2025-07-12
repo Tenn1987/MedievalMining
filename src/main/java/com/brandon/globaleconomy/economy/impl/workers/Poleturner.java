@@ -2,7 +2,7 @@ package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityProductionManager;
-import org.bukkit.Bukkit;
+import org.bukkit.Material;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +13,11 @@ public class Poleturner extends Worker {
     }
 
     @Override
+    public WorkerRole getRole() {
+        return WorkerRole.POLETURNER;
+    }
+
+    @Override
     public void performWork(City city) {
         if (!isReadyToWork()) return;
 
@@ -20,7 +25,8 @@ public class Poleturner extends Worker {
 
         List<String> logs = List.of(
                 "OAK_LOG", "BIRCH_LOG", "SPRUCE_LOG", "JUNGLE_LOG",
-                "ACACIA_LOG", "DARK_OAK_LOG", "MANGROVE_LOG", "CHERRY_LOG"
+                "ACACIA_LOG", "DARK_OAK_LOG", "MANGROVE_LOG", "CHERRY_LOG",
+                "DEAD_BUSH" // desert support
         );
 
         String availableLog = logs.stream()
@@ -30,16 +36,20 @@ public class Poleturner extends Worker {
 
         if (availableLog == null) return;
 
-        if (!manager.canProduce(this, "STICK", 8)) {
-            Bukkit.getLogger().info(getName() + " was blocked from making sticks.");
+        // Use reduced output if using DEAD_BUSH
+        int outputSticks = 8;
+
+        if (!manager.canProduce(this, "STICK", outputSticks)) {
+            city.log("§e[POLETURNER] " + getName() + " was blocked from making sticks due to production limits.");
             return;
         }
 
-        manager.consume(availableLog, 1);
-        manager.recordProduction("STICK", 8);
-        city.addItem(org.bukkit.Material.STICK, 8);
 
-        rateLimitedLog(getName(), "Poleturner " + getName() + " is crafting sticks for " + city.getName(), 5000);
+        manager.consume(availableLog, 1);
+        manager.recordProduction("STICK", outputSticks);
+        city.addItem(Material.STICK, outputSticks);
+
+        rateLimitedLog(getName(), "Poleturner " + getName() + " crafted " + outputSticks + " sticks for " + city.getName(), 5000);
         markCooldown();
     }
 }

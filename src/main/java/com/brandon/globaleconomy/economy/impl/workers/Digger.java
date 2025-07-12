@@ -14,7 +14,7 @@ import java.util.*;
 
 public class Digger extends Worker {
     private static final List<String> DIGGABLES = List.of("CLAY", "MUD", "DRIPSTONE_BLOCK", "GRAVEL", "SAND");
-    private static final long COOLDOWN_MS = 4000; // 4 seconds
+    private static final long COOLDOWN_MS = 8000; // 8 seconds
     private long lastWorkTime = 0;
 
     public Digger(City city, String name, UUID npcId) {
@@ -73,9 +73,30 @@ public class Digger extends Worker {
 
     private String getBestDiggable(City city) {
         Map<String, Integer> scanned = city.getResources();
-        return DIGGABLES.stream()
-                .filter(res -> scanned.getOrDefault(res, 0) > 0)
-                .findFirst()
-                .orElse(null);
+        Map<String, Integer> available = new HashMap<>();
+
+        int total = 0;
+        for (String res : DIGGABLES) {
+            int count = scanned.getOrDefault(res, 0);
+            if (count > 0) {
+                available.put(res, count);
+                total += count;
+            }
+        }
+
+        if (available.isEmpty()) return null;
+
+        int roll = new Random().nextInt(total);
+        int cumulative = 0;
+        for (Map.Entry<String, Integer> entry : available.entrySet()) {
+            cumulative += entry.getValue();
+            if (roll < cumulative) {
+                return entry.getKey();
+            }
+        }
+
+        return null; // Fallback, though it shouldn't happen
     }
+
+
 }

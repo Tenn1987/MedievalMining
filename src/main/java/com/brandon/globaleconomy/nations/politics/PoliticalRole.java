@@ -1,4 +1,4 @@
-package com.brandon.globaleconomy.npcnation.politics;
+package com.brandon.globaleconomy.nations.politics;
 
 public enum PoliticalRole {
     KING("King"),

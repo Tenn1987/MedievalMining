@@ -1,7 +1,7 @@
-package com.brandon.globaleconomy.npcnation;
+package com.brandon.globaleconomy.nations;
 
-import com.brandon.globaleconomy.npcnation.politics.PoliticalNPC;
-import com.brandon.globaleconomy.npcnation.politics.PoliticalRole;
+import com.brandon.globaleconomy.nations.politics.PoliticalNPC;
+import com.brandon.globaleconomy.nations.politics.PoliticalRole;
 
 import java.io.Serializable;
 import java.util.*;
