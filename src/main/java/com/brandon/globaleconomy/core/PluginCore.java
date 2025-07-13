@@ -69,6 +69,7 @@ public class PluginCore extends JavaPlugin {
         // === (1) Initialize Economy Components ===
         walletManager = new WalletManager();
 
+
         currencyManager = new CurrencyManager();
         MerchantTradeGUI.setCurrencyManager(currencyManager);
         MoneyChangerGUI.setManagers(currencyManager, walletManager);
@@ -111,11 +112,22 @@ public class PluginCore extends JavaPlugin {
         getCommand("citysave").setExecutor(new CitySaveCommand(cityManager, cityYamlLoader));
         getCommand("cityreload").setExecutor(new CityReloadCommand(cityManager, cityYamlLoader, nameLoader, workerFactory));
         getCommand("currency").setExecutor(new CurrencyCommand(currencyManager, cityManager));
-        getCommand("wallet").setExecutor(new WalletCommand(walletManager)); // NEW wallet command
+
+// Wallet-related commands
+        WalletCommand walletCommand = new WalletCommand(walletManager);
+        getCommand("wallet").setExecutor(walletCommand);
+        getCommand("wallet").setTabCompleter(walletCommand);
+
+// Other commands
         getCommand("citytreasury").setExecutor(new CityTreasuryCommand(cityManager));
-        getCommand("money").setExecutor(new WalletCommand(walletManager));
-        getCommand("balance").setExecutor(new WalletCommand(walletManager));
-        getCommand("pay").setExecutor(new PayCommand(walletManager)); // assuming you have this class
+        getCommand("money").setExecutor(walletCommand); // Same WalletCommand as 'wallet'
+        getCommand("balance").setExecutor(walletCommand); // Same WalletCommand as 'wallet'
+        getCommand("pay").setExecutor(new PayCommand(walletManager)); // Make sure PayCommand is implemented correctly
+        getCommand("debugworkers").setExecutor(new WorkerDebugCommand());
+        getCommand("merchantdebug").setExecutor(new MerchantDebugCommand());
+
+
+
 
 
 

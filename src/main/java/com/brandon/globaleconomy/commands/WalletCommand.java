@@ -2,15 +2,15 @@ package com.brandon.globaleconomy.commands;
 
 import com.brandon.globaleconomy.economy.WalletManager;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.*;
+import org.bukkit.util.StringUtil;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-public class WalletCommand implements CommandExecutor {
+public class WalletCommand implements CommandExecutor, TabCompleter {
 
     private final WalletManager walletManager;
 
@@ -20,52 +20,52 @@ public class WalletCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-
-        // === /wallet give <player> <currency> <amount> ===
-        if (args.length == 4 && args[0].equalsIgnoreCase("give")) {
-            String targetName = args[1];
-            String currency = args[2].toUpperCase();
-            double amount;
-
-            try {
-                amount = Double.parseDouble(args[3]);
-            } catch (NumberFormatException e) {
-                sender.sendMessage("§cInvalid amount.");
-                return true;
-            }
-
-            Player target = Bukkit.getPlayer(targetName);
-            if (target == null || !target.isOnline()) {
-                sender.sendMessage("§cPlayer not found or offline.");
-                return true;
-            }
-
-            UUID uuid = target.getUniqueId();
-            if (!walletManager.hasWallet(uuid)) {
-                sender.sendMessage("§cTarget does not have a wallet.");
-                return true;
-            }
-
-            Map<String, Double> wallet = walletManager.getWallet(uuid);
-            wallet.put(currency, wallet.getOrDefault(currency, 0.0) + amount);
-            sender.sendMessage("§aGave " + amount + " " + currency + " to " + target.getName());
-            target.sendMessage("§aYou received " + amount + " " + currency);
+        if (args.length < 4 || !args[0].equalsIgnoreCase("give")) {
+            sender.sendMessage("§cUsage: /wallet give <player> <currency> <amount>");
             return true;
         }
 
-        // === /wallet === (show own balance)
-        if (sender instanceof Player player) {
-            UUID uuid = player.getUniqueId();
-            Map<String, Double> balances = walletManager.getAllBalances(uuid);
+        String playerName = args[1];
+        String currency = args[2];
+        double amount;
 
-            player.sendMessage("§6Your wallet:");
-            for (Map.Entry<String, Double> entry : balances.entrySet()) {
-                player.sendMessage("§7- " + entry.getKey() + ": §a" + String.format("%.2f", entry.getValue()));
-            }
+        try {
+            amount = Double.parseDouble(args[3]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage("§cAmount must be a number.");
             return true;
         }
 
-        sender.sendMessage("§cOnly players have wallets.");
+        OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
+        if (target == null) {
+            sender.sendMessage("§cPlayer not found.");
+            return true;
+        }
+
+        walletManager.deposit(target.getUniqueId(), currency, amount);
+        sender.sendMessage("§aGave §e" + amount + " " + currency + "§a to §e" + playerName);
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return StringUtil.copyPartialMatches(args[0], List.of("give"), new ArrayList<>());
+        }
+
+        if (args.length == 2) {
+            List<String> players = new ArrayList<>();
+            for (OfflinePlayer p : Bukkit.getOfflinePlayers()) {
+                players.add(p.getName());
+            }
+            return StringUtil.copyPartialMatches(args[1], players, new ArrayList<>());
+        }
+
+        if (args.length == 3) {
+            // Suggest known currencies — if you want this dynamic, pull from CurrencyManager
+            return StringUtil.copyPartialMatches(args[2], Arrays.asList("USD", "GBP", "FRF", "PTE", "REA"), new ArrayList<>());
+        }
+
+        return new ArrayList<>();
     }
 }

@@ -37,6 +37,10 @@ public class WorkerTrait extends Trait implements Listener {
 
     @Override
     public void run() {
+        Bukkit.getLogger().info("[DEBUG] WorkerTrait.run() fired.");
+        if (npc == null || !npc.isSpawned()) return;
+        Bukkit.getLogger().info("[DEBUG] NPC is spawned: " + getNPC().getName());
+
         if (worker != null && worker.isReadyToWork()) {
             try {
                 worker.performWork(worker.getCity());
@@ -45,6 +49,7 @@ public class WorkerTrait extends Trait implements Listener {
             }
         }
     }
+
 
     @Override
     public boolean isRunImplemented() {

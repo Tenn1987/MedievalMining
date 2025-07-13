@@ -1,5 +1,5 @@
 name: MedievalMining
-version: 0.0.053
+version: 0.0.054
 main: com.brandon.globaleconomy.core.PluginCore
 api-version: 1.19
 commands:
@@ -23,9 +23,17 @@ commands:
   currency:
     description: Manage currencies (create, list, info)
     usage: /currency <create|list|info>
+  debugworkers:
+    description: Checks NPCs for WorkerTrait and valid Worker assignment
+    usage: /debugworkers
+    permission: globaleco.debug
   economy:
     description: Economy administration commands
     usage: /economy <subcommand>
+  merchantdebug:
+    description: Diagnose why merchants are not selling
+    usage: /merchantdebug
+    permission: globaleco.debug
   money:
     description: Shows your wallet balances
     usage: /money
@@ -34,7 +42,8 @@ commands:
     usage: /pay <player> <amount> [currency]
   wallet:
     description: Manage your wallet
-    usage: /wallet
+    usage: /wallet <give> <player> <currency> <amount>
+    permission: globaleco.wallet.admin
   worker:
     description: Manage workers in a city
     usage: /worker <list|add|remove|info> [city] [workerType] [workerName]

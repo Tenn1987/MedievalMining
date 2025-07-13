@@ -27,20 +27,37 @@ public class Merchant extends Worker {
         if (System.currentTimeMillis() - lastWorkTime < MERCHANT_COOLDOWN_MS) return;
         lastWorkTime = System.currentTimeMillis();
 
+        Bukkit.getLogger().info("[Merchant] " + getName() + " performWork started.");
+        Bukkit.getLogger().info("[Merchant] " + getName() + " starting performWork in " + city.getName());
+
         Map<String, Integer> stock = city.getResources();
-        if (stock.isEmpty()) return;
+        if (stock == null || stock.isEmpty()) {
+            Bukkit.getLogger().warning("[Merchant] " + getName() + " found no resources to sell.");
+            return;
+        }
 
         List<String> tradable = stock.keySet().stream()
-                .filter(k -> MarketAPI.getInstance().getItem(Material.matchMaterial(k)) != null)
-                .filter(k -> stock.get(k) > 2) // Avoid selling all of something
+                .filter(k -> {
+                    Material mat = Material.matchMaterial(k);
+                    boolean valid = mat != null && MarketAPI.getInstance().getItem(mat) != null;
+                    if (!valid) {
+                        Bukkit.getLogger().info("[Merchant] " + getName() + " skipped invalid or unregistered item: " + k);
+                    }
+                    return valid;
+                })
+                .filter(k -> stock.get(k) > 2)
                 .toList();
 
-        if (tradable.isEmpty()) return;
+        if (tradable.isEmpty()) {
+            Bukkit.getLogger().info("[Merchant] " + getName() + " found no tradable items with quantity > 2.");
+            return;
+        }
 
-        // Random selection of 1–3 items to sell
         Collections.shuffle(tradable);
         int itemsToSell = 1 + new Random().nextInt(3);
         List<String> batch = tradable.subList(0, Math.min(itemsToSell, tradable.size()));
+
+        Bukkit.getLogger().info("[Merchant] " + getName() + " selected items: " + batch);
 
         new BukkitRunnable() {
             @Override
@@ -49,26 +66,32 @@ public class Merchant extends Worker {
 
                 for (String itemName : batch) {
                     Material mat = Material.matchMaterial(itemName);
-                    if (mat == null) continue;
+                    if (mat == null) {
+                        Bukkit.getLogger().warning("[Merchant] Invalid material: " + itemName);
+                        continue;
+                    }
 
-                    int quantity = Math.min(stock.get(itemName), 4); // Sell up to 4
+                    int quantity = Math.min(stock.get(itemName), 4);
                     if (quantity <= 0) continue;
 
                     MarketItem item = MarketAPI.getInstance().getItem(mat);
-                    if (item == null) continue;
+                    if (item == null) {
+                        Bukkit.getLogger().warning("[Merchant] No MarketItem found for " + mat);
+                        continue;
+                    }
 
                     double revenue = quantity * item.getCurrentPrice();
                     city.removeItem(mat, quantity);
                     totalEarnings += revenue;
 
-                    Bukkit.getLogger().info(name + " sold " + quantity + "x " + mat + " for " + revenue);
+                    Bukkit.getLogger().info("[Merchant] " + getName() + " sold " + quantity + "x " + mat + " for " + revenue);
                 }
 
                 if (totalEarnings > 0) {
                     city.depositToTreasury(city.getEffectiveCurrency(null), totalEarnings);
+                    Bukkit.getLogger().info("[Merchant] " + getName() + " deposited " + totalEarnings + " to treasury.");
                 }
 
-                // Visual feedback
                 NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
                 if (npc != null && npc.isSpawned()) {
                     Location target = city.getLocation().clone().add(2 - new Random().nextInt(5), 0, 2 - new Random().nextInt(5));
@@ -80,6 +103,6 @@ public class Merchant extends Worker {
 
                 markCooldown();
             }
-        }.runTaskLater(PluginCore.getInstance(), 40L); // 2-second delay before transaction
+        }.runTaskLater(PluginCore.getInstance(), 40L);
     }
 }

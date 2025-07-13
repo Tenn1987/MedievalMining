@@ -97,14 +97,19 @@ public class MarketAPI {
     public void updateMarket() {
         for (MarketItem item : itemMap.values()) {
             double currentPrice = item.getCurrentPrice();
-            double volatility = 0.05 + random.nextDouble() * 0.05; // 5%–10% swing
+            double volatility = 0.03 + random.nextDouble() * 0.07; // 3%–10% swing
             boolean increase = random.nextBoolean();
             double change = currentPrice * volatility;
             double newPrice = increase ? currentPrice + change : currentPrice - change;
+
+            // Clamp within min/max range
             newPrice = Math.max(item.getMinPrice(), Math.min(item.getMaxPrice(), newPrice));
-            item.setCurrentPrice(newPrice);
+
+            // Apply new price
+            item.setCurrentPrice(newPrice); // auto-updates sellPrice inside
         }
     }
+
 
     public Map<Material, MarketItem> getAllItems() {
         return itemMap;

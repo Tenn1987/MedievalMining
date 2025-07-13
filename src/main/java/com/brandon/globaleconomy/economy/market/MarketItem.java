@@ -7,14 +7,13 @@ public class MarketItem {
     private final double minPrice;
     private final double maxPrice;
     private double currentPrice;
-    private double sellPrice; // ← Add this field
+    private double sellPrice;
 
     public MarketItem(Material material, double currentPrice, double minPrice, double maxPrice) {
         this.material = material;
-        this.currentPrice = currentPrice;
         this.minPrice = minPrice;
         this.maxPrice = maxPrice;
-        this.sellPrice = currentPrice * 0.75; // ← Default sell price is 75% of currentPrice
+        setCurrentPrice(currentPrice);
     }
 
     public Material getMaterial() {
@@ -27,7 +26,7 @@ public class MarketItem {
 
     public void setCurrentPrice(double currentPrice) {
         this.currentPrice = currentPrice;
-        this.sellPrice = currentPrice * 0.75; // Keep sell price updated dynamically
+        this.sellPrice = Math.max(minPrice, currentPrice * 0.75);  // Sell price tracks 75% of market
     }
 
     public double getMinPrice() {

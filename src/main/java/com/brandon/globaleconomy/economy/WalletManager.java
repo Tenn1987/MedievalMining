@@ -7,6 +7,16 @@ import java.util.UUID;
 
 public class WalletManager {
     private final Map<UUID, Map<String, Double>> wallets = new HashMap<>();
+    private static WalletManager instance;
+
+    public static WalletManager getInstance() {
+        return instance;
+    }
+
+    public static void setInstance(WalletManager walletManager) {
+        instance = walletManager;
+    }
+
 
     public void deposit(UUID playerId, String currency, double amount) {
         wallets.computeIfAbsent(playerId, k -> new HashMap<>());
