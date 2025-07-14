@@ -1,5 +1,5 @@
 name: MedievalMining
-version: 0.0.054
+version: 0.0.055
 main: com.brandon.globaleconomy.core.PluginCore
 api-version: 1.19
 commands:

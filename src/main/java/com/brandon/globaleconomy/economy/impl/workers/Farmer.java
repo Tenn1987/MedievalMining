@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -44,17 +43,16 @@ public class Farmer extends Worker {
         new BukkitRunnable() {
             @Override
             public void run() {
-                // Simulate harvesting
-                int cropHarvested = 1 + new Random().nextInt(2); // 1–2 crop
+                int cropHarvested = 1 + new Random().nextInt(2); // 1–2 crops
                 int seedsHarvested = new Random().nextInt(4);    // 0–3 seeds
 
-                int seedsKept = Math.min(seedsHarvested, 2);     // Keep some seeds
+                int seedsKept = Math.min(seedsHarvested, 2);     // Keep up to 2 seeds
                 int cropSold = cropHarvested;
 
-                // Update personal inventory
+                // Add seeds to personal inventory
                 addToInventory(getSeedFromCrop(crop), seedsKept);
 
-                // Add to city inventory and sell
+                // Add crops to city inventory
                 city.addItem(crop, cropSold);
 
                 MarketItem item = MarketAPI.getInstance().getItem(crop);
@@ -62,12 +60,10 @@ public class Farmer extends Worker {
                     double price = item.getCurrentPrice();
                     double earnings = price * cropSold;
                     city.depositToTreasury(city.getEffectiveCurrency(null), earnings);
-                    Bukkit.getLogger().info(name + " harvested " + cropSold + "x " + crop + " and earned " + earnings);
+                    Bukkit.getLogger().info("[Farmer] " + name + " harvested " + cropSold + "x " + crop + " and earned " + earnings);
                 }
 
-                // Simulate hoe/plant visuals
-                animateFarming();
-
+                animateFarming(city);
                 markCooldown();
             }
         }.runTaskLater(PluginCore.getInstance(), 60L); // 3 seconds delay
@@ -102,11 +98,11 @@ public class Farmer extends Worker {
         return personalInventory;
     }
 
-    private void animateFarming() {
+    private void animateFarming(City city) {
         NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
         if (npc != null && npc.isSpawned()) {
             Location target = city.getLocation().clone().add(2 - new Random().nextInt(5), 0, 2 - new Random().nextInt(5));
-            npc.getNavigator().setTarget(target); // Walk to random spot near town center
+            npc.getNavigator().setTarget(target); // Walk to a nearby location
             if (npc.getEntity() instanceof Player playerEntity) {
                 playerEntity.swingMainHand();
             }

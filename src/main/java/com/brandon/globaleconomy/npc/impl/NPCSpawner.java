@@ -11,22 +11,25 @@ import org.bukkit.entity.EntityType;
 
 public class NPCSpawner {
 
-    public static void spawnWorkerNpc(Worker worker, Location location) {
-        City city = worker.getCity();
+    // Method to spawn a worker NPC and add the WorkerTrait
+    public static void spawnWorkerNpc(Worker worker, Location spawnLocation) {
+        if (worker == null || worker.getCity() == null) {
+            Bukkit.getLogger().warning("[NPCSpawner] Worker or City is null for " + (worker != null ? worker.getName() : "null"));
+            return;
+        }
+
         String name = worker.getName();
-
-        // Offset from bell: 1 block east, 1 block up, 1 block south
-        Location bellLocation = city.getLocation();
-        Location spawnLocation = bellLocation.clone().add(1, 1, 1);
-
         NPC npc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, name);
         npc.spawn(spawnLocation);
 
         WorkerTrait trait = npc.getOrAddTrait(WorkerTrait.class);
-        if (trait != null) {
-            trait.setWorker(worker);
-        } else {
-            Bukkit.getLogger().warning("[NPCSpawner] WorkerTrait was null for NPC: " + name);
-        }
+        trait.setWorker(worker);
+
+        Bukkit.getLogger().info("[NPCSpawner] Spawned " + name + " at " +
+                spawnLocation.getWorld().getName() + " " +
+                spawnLocation.getBlockX() + "," +
+                spawnLocation.getBlockY() + "," +
+                spawnLocation.getBlockZ());
     }
+
 }

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,19 +5,14 @@
 
     <groupId>org.example</groupId>
     <artifactId>MedievalMining</artifactId>
-    <version>0.0.054-SNAPSHOT</version>
+    <version>0.0.055-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
         <spigot.version>1.21.5-R0.1-SNAPSHOT</spigot.version>
     </properties>
+
     <repositories>
-        <repository>
-            <id>spigot-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
-        </repository>
         <repository>
             <id>papermc-repo</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
@@ -27,15 +21,21 @@
             <id>citizens-repo</id>
             <url>https://maven.citizensnpcs.co/repo</url>
         </repository>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
     </repositories>
+
     <dependencies>
-        <!--  Spigot API  -->
+        <!-- Spigot API -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>${spigot.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <!-- dynmap -->
         <dependency>
             <groupId>org.dynmap</groupId>
@@ -43,28 +43,32 @@
             <version>3.7-beta-9</version>
             <scope>provided</scope>
         </dependency>
-        <!-- snakyaml -->
+
+        <!-- snakeyaml -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>2.2</version>
         </dependency>
-        <!--  Vault API  -->
+
+        <!-- Vault API -->
         <dependency>
             <groupId>net.milkbowl.vault</groupId>
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
             <scope>provided</scope>
         </dependency>
-        <!--  Citizens -->
+
+        <!-- Citizens API -->
         <dependency>
             <groupId>net.citizensnpcs</groupId>
-            <artifactId>citizens-main</artifactId>
-            <version>2.0.38-SNAPSHOT</version>
-            <!--  Match your installed Citizens version  -->
+            <artifactId>citizensapi</artifactId>
+            <version>2.0.39-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+
     </dependencies>
+
     <build>
         <plugins>
             <plugin>

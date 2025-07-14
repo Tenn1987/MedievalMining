@@ -27,8 +27,7 @@ public class Merchant extends Worker {
         if (System.currentTimeMillis() - lastWorkTime < MERCHANT_COOLDOWN_MS) return;
         lastWorkTime = System.currentTimeMillis();
 
-        Bukkit.getLogger().info("[Merchant] " + getName() + " performWork started.");
-        Bukkit.getLogger().info("[Merchant] " + getName() + " starting performWork in " + city.getName());
+        Bukkit.getLogger().info("[Merchant] " + getName() + " performWork started for city: " + city.getName());
 
         Map<String, Integer> stock = city.getResources();
         if (stock == null || stock.isEmpty()) {
@@ -41,7 +40,7 @@ public class Merchant extends Worker {
                     Material mat = Material.matchMaterial(k);
                     boolean valid = mat != null && MarketAPI.getInstance().getItem(mat) != null;
                     if (!valid) {
-                        Bukkit.getLogger().info("[Merchant] " + getName() + " skipped invalid or unregistered item: " + k);
+                        Bukkit.getLogger().info("[Merchant] Skipped invalid or unregistered item: " + k);
                     }
                     return valid;
                 })
@@ -84,7 +83,7 @@ public class Merchant extends Worker {
                     city.removeItem(mat, quantity);
                     totalEarnings += revenue;
 
-                    Bukkit.getLogger().info("[Merchant] " + getName() + " sold " + quantity + "x " + mat + " for " + revenue);
+                    Bukkit.getLogger().info("[Merchant] " + getName() + " sold " + quantity + "x " + mat.name() + " for " + revenue);
                 }
 
                 if (totalEarnings > 0) {
@@ -99,10 +98,11 @@ public class Merchant extends Worker {
                     if (npc.getEntity() instanceof Player playerEntity) {
                         playerEntity.swingMainHand();
                     }
+                    npc.setName(getName() + " §e(Trading)");
                 }
 
                 markCooldown();
             }
-        }.runTaskLater(PluginCore.getInstance(), 40L);
+        }.runTaskLater(PluginCore.getInstance(), 40L); // Delay to simulate activity
     }
 }

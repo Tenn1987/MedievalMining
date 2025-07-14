@@ -2,9 +2,9 @@ package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.core.PluginCore;
+import com.brandon.globaleconomy.diplomacy.DiplomaticStatus;
 import com.brandon.globaleconomy.economy.market.MarketAPI;
 import com.brandon.globaleconomy.economy.market.MarketItem;
-import com.brandon.globaleconomy.diplomacy.DiplomaticStatus;
 import com.brandon.globaleconomy.nations.DiplomacyManager;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
@@ -18,6 +18,7 @@ import java.util.*;
 public class Caravaner extends Worker {
     private long lastWorkTime = 0;
     private static final long COOLDOWN_MS = 30000; // 30 seconds
+    private boolean busy = false;
 
     public Caravaner(City city, String name, UUID npcId) {
         super(city, name, WorkerRole.CARAVANER, npcId);
@@ -25,11 +26,15 @@ public class Caravaner extends Worker {
 
     @Override
     public void performWork(City city) {
-        if (System.currentTimeMillis() - lastWorkTime < COOLDOWN_MS) return;
+        if (busy || System.currentTimeMillis() - lastWorkTime < COOLDOWN_MS) return;
         lastWorkTime = System.currentTimeMillis();
+        busy = true;
 
         City target = findNearestFriendlyCity(city);
-        if (target == null) return;
+        if (target == null) {
+            busy = false;
+            return;
+        }
 
         Bukkit.getLogger().info("[Caravaner] " + name + " is traveling from " + city.getName() + " to " + target.getName());
 
@@ -41,31 +46,42 @@ public class Caravaner extends Worker {
 
                 if (exports.isEmpty() || imports.isEmpty()) {
                     Bukkit.getLogger().info("[Caravaner] " + name + " found no viable trade between " + city.getName() + " and " + target.getName());
+                    busy = false;
                     return;
                 }
 
                 for (Map.Entry<Material, Integer> export : exports.entrySet()) {
                     Material item = export.getKey();
                     int amount = export.getValue();
-                    city.removeItem(item, amount);
-                    target.addItem(item, amount);
+                    int transferable = Math.min(city.getResources().getOrDefault(item.name(), 0), amount);
+                    if (transferable > 0) {
+                        city.removeItem(item, transferable);
+                        target.addItem(item, transferable);
+                    }
                 }
 
                 for (Map.Entry<Material, Integer> imp : imports.entrySet()) {
                     Material item = imp.getKey();
                     int amount = imp.getValue();
-                    target.removeItem(item, amount);
-                    city.addItem(item, amount);
+                    int transferable = Math.min(target.getResources().getOrDefault(item.name(), 0), amount);
+                    if (transferable > 0) {
+                        target.removeItem(item, transferable);
+                        city.addItem(item, transferable);
+                    }
                 }
 
                 NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
                 if (npc != null && npc.isSpawned()) {
-                    npc.getNavigator().setTarget(target.getLocation());
+                    if (npc.getEntity().getLocation().distance(target.getLocation()) > 5) {
+                        npc.getNavigator().setTarget(target.getLocation());
+                    }
+                    npc.data().set("caravanStatus", "traveling");
+                    npc.setName(name + " §7(Trading...)");
                 }
 
                 Bukkit.getLogger().info("[Caravaner] " + name + " completed trade: " + exports.size() + " exports and " + imports.size() + " imports.");
-
                 markCooldown();
+                busy = false;
             }
         }.runTaskLater(PluginCore.getInstance(), 80L); // 4-second delay
     }

@@ -1,30 +1,29 @@
 package com.brandon.globaleconomy.npc.impl;
 
 import com.brandon.globaleconomy.city.City;
-import com.brandon.globaleconomy.core.PluginCore;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
-import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
 import com.brandon.globaleconomy.gui.WorkerTradeGUI;
+import com.brandon.globaleconomy.core.PluginCore;
+import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
+import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.api.trait.Trait;
-import net.citizensnpcs.api.trait.TraitName;
 import net.citizensnpcs.api.util.DataKey;
 import org.bukkit.Bukkit;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.Location;
+import org.bukkit.entity.EntityType;
 
 import java.util.UUID;
 
-@TraitName("workertrait")
-public class WorkerTrait extends Trait implements Listener {
-
+public class WorkerTrait extends Trait {
     private Worker worker;
 
     public WorkerTrait() {
         super("workertrait");
-        Bukkit.getPluginManager().registerEvents(this, JavaPlugin.getProvidingPlugin(getClass()));
     }
 
     public void setWorker(Worker worker) {
@@ -37,19 +36,39 @@ public class WorkerTrait extends Trait implements Listener {
 
     @Override
     public void run() {
-        Bukkit.getLogger().info("[DEBUG] WorkerTrait.run() fired.");
         if (npc == null || !npc.isSpawned()) return;
+
+        // Log for debugging
+        Bukkit.getLogger().info("[DEBUG] WorkerTrait.run() fired.");
         Bukkit.getLogger().info("[DEBUG] NPC is spawned: " + getNPC().getName());
 
+        // Move NPC to target location
+        Location targetLocation = getTargetLocation();
+        moveNPCToLocation(targetLocation);
+
+        // Check and perform work if the worker is ready
         if (worker != null && worker.isReadyToWork()) {
             try {
                 worker.performWork(worker.getCity());
             } catch (Exception e) {
-                System.err.println("[WorkerTrait] Error during performWork for " + worker.getName() + ": " + e.getMessage());
+                Bukkit.getLogger().warning("[WorkerTrait] Error during performWork: " + e.getMessage());
             }
         }
     }
 
+    private void moveNPCToLocation(Location targetLocation) {
+        if (npc.isSpawned()) {
+            // Move the NPC using Citizens' Navigator
+            Navigator navigator = npc.getNavigator();  // Use the correct class
+            navigator.setTarget(targetLocation);  // Set the target location for movement
+        }
+    }
+
+    private Location getTargetLocation() {
+        // Example: Move NPC to the city's center (adjust this to your needs)
+        City city = worker.getCity();
+        return city != null ? city.getLocation() : npc.getEntity().getLocation();
+    }
 
     @Override
     public boolean isRunImplemented() {
