@@ -56,6 +56,7 @@ public class WorkerTrait extends Trait {
         }
     }
 
+
     private void moveNPCToLocation(Location targetLocation) {
         if (npc.isSpawned()) {
             // Move the NPC using Citizens' Navigator
@@ -65,10 +66,11 @@ public class WorkerTrait extends Trait {
     }
 
     private Location getTargetLocation() {
-        // Example: Move NPC to the city's center (adjust this to your needs)
+        if (worker == null) return npc.getEntity().getLocation(); // Safe fallback
         City city = worker.getCity();
         return city != null ? city.getLocation() : npc.getEntity().getLocation();
     }
+
 
     @Override
     public boolean isRunImplemented() {
