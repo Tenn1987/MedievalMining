@@ -3,55 +3,64 @@ package com.brandon.globaleconomy.economy.impl.workers;
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.city.CityProductionManager;
 import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class Toolmaker extends Worker {
     public Toolmaker(City city, String name, UUID npcId) {
         super(city, name, WorkerRole.TOOLMAKER, npcId);
     }
 
+    private static final List<String> TOOL_TYPES = List.of("AXE", "SWORD", "PICKAXE", "SHOVEL", "HOE");
+    private static final Map<String, Integer> MATERIAL_COST = Map.of(
+            "AXE", 3,
+            "SWORD", 2,
+            "PICKAXE", 3,
+            "SHOVEL", 1,
+            "HOE", 2
+    );
+    private static final int STICK_COST = 2;
+
+    private static final List<String> MATERIAL_TIERS = List.of("IRON", "STONE", "WOOD");
+
     @Override
     public void performWork(City city) {
-        CityProductionManager productionManager = city.getProductionManager();
+        CityProductionManager manager = city.getProductionManager();
         Map<String, Integer> resources = city.getResources();
 
-        tryCraftTool(city, productionManager, resources, "IRON", 2, 3, "IRON_AXE");
-        tryCraftTool(city, productionManager, resources, "IRON", 2, 2, "IRON_SWORD");
-        tryCraftTool(city, productionManager, resources, "IRON", 2, 3, "IRON_PICKAXE");
-        tryCraftTool(city, productionManager, resources, "IRON", 2, 1, "IRON_SHOVEL");
-        tryCraftTool(city, productionManager, resources, "IRON", 2, 2, "IRON_HOE");
+        for (String toolType : TOOL_TYPES) {
+            for (String tier : MATERIAL_TIERS) {
+                String toolName = getToolName(tier, toolType);
+                int materialNeeded = MATERIAL_COST.getOrDefault(toolType, 2);
 
-        tryCraftTool(city, productionManager, resources, "STONE", 2, 3, "STONE_AXE");
-        tryCraftTool(city, productionManager, resources, "STONE", 2, 2, "STONE_SWORD");
-        tryCraftTool(city, productionManager, resources, "STONE", 2, 3, "STONE_PICKAXE");
-        tryCraftTool(city, productionManager, resources, "STONE", 2, 1, "STONE_SHOVEL");
-        tryCraftTool(city, productionManager, resources, "STONE", 2, 2, "STONE_HOE");
+                if (canCraft(resources, tier, materialNeeded, STICK_COST)
+                        && manager.canProduce(this, toolName, 1)) {
 
-        tryCraftTool(city, productionManager, resources, "WOOD", 2, 3, "WOODEN_AXE");
-        tryCraftTool(city, productionManager, resources, "WOOD", 2, 2, "WOODEN_SWORD");
-        tryCraftTool(city, productionManager, resources, "WOOD", 2, 3, "WOODEN_PICKAXE");
-        tryCraftTool(city, productionManager, resources, "WOOD", 2, 1, "WOODEN_SHOVEL");
-        tryCraftTool(city, productionManager, resources, "WOOD", 2, 2, "WOODEN_HOE");
+                    // Consume resources
+                    manager.consume(tier, materialNeeded);
+                    manager.consume("STICK", STICK_COST);
+
+                    // Add crafted tool
+                    manager.recordProduction(toolName, 1);
+                    city.addItem(Material.valueOf(toolName), 1);
+
+                    rateLimitedLog(getName(), "Toolmaker " + getName() + " crafted 1 " + toolName + " for " + city.getName(), 5000);
+                    markCooldown();
+                    return; // Craft one tool per tick
+                }
+            }
+        }
     }
 
-    private void tryCraftTool(City city, CityProductionManager manager, Map<String, Integer> resources,
-                              String material, int sticksRequired, int materialRequired, String toolName) {
+    private boolean canCraft(Map<String, Integer> resources, String material, int materialCount, int stickCount) {
+        return resources.getOrDefault("STICK", 0) >= stickCount
+                && resources.getOrDefault(material, 0) >= materialCount;
+    }
 
-        String sticks = "STICK";
-        if (resources.getOrDefault(sticks, 0) < sticksRequired) return;
-        if (resources.getOrDefault(material, 0) < materialRequired) return;
-
-        if (!manager.canProduce(this, toolName, 1)) return;
-
-        // Consume resources
-        manager.consume(sticks, sticksRequired);
-        manager.consume(material, materialRequired);
-
-        // Record and add tool
-        manager.recordProduction(toolName, 1);
-        city.addItem(Material.valueOf(toolName), 1);
+    private String getToolName(String material, String toolType) {
+        return switch (material) {
+            case "WOOD" -> "WOODEN_" + toolType;
+            default -> material + "_" + toolType;
+        };
     }
 }

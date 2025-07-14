@@ -9,6 +9,7 @@ import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -24,8 +25,9 @@ public class Farmer extends Worker {
             Material.MELON
     );
 
+    private static final Random RANDOM = new Random();
     private long lastWorkTime = 0;
-    private static final long COOLDOWN_MS = 15000; // 15 seconds
+    private static final long COOLDOWN_MS = 15000;
     private final Map<Material, Integer> personalInventory = new HashMap<>();
 
     public Farmer(City city, String name, UUID npcId) {
@@ -40,33 +42,67 @@ public class Farmer extends Worker {
         Material crop = getBestCrop(city);
         if (crop == null) return;
 
+        Material seed = getSeedFromCrop(crop);
+        List<Location> fertilePlots = city.getFertilePlots(crop);
+        if (fertilePlots.isEmpty()) return;
+
+        Location targetPlot = fertilePlots.get(RANDOM.nextInt(fertilePlots.size()));
+
+        NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
+        if (npc == null || !npc.isSpawned()) return;
+
+        npc.getNavigator().setTarget(targetPlot);
+
         new BukkitRunnable() {
             @Override
             public void run() {
-                int cropHarvested = 1 + new Random().nextInt(2); // 1–2 crops
-                int seedsHarvested = new Random().nextInt(4);    // 0–3 seeds
+                double multiplier = getProductivityMultiplier(targetPlot);
+                int cropHarvested = (int) Math.round((1 + RANDOM.nextInt(2)) * multiplier);
+                int seedsHarvested = RANDOM.nextInt(4);
+                int seedsKept = Math.min(seedsHarvested, 2);
+                addToInventory(seed, seedsKept);
 
-                int seedsKept = Math.min(seedsHarvested, 2);     // Keep up to 2 seeds
-                int cropSold = cropHarvested;
+                Location soil = targetPlot.clone().subtract(0, 1, 0);
 
-                // Add seeds to personal inventory
-                addToInventory(getSeedFromCrop(crop), seedsKept);
+                // Optional: Require hoe from city inventory
+                /*
+                if (!city.hasItem(Material.STONE_HOE)) {
+                    Bukkit.getLogger().info("[Farmer] " + name + " needs a hoe to till soil.");
+                    return;
+                } else {
+                    city.removeItem(Material.STONE_HOE, 1);
+                }
+                */
 
-                // Add crops to city inventory
-                city.addItem(crop, cropSold);
+                // Hoe the ground if not already farmland
+                if (soil.getBlock().getType() != Material.FARMLAND) {
+                    boolean hoed = tillSoil(soil);
+                    if (!hoed) return;
+                }
+
+                // Replant if seed is available
+                if (personalInventory.getOrDefault(seed, 0) > 0) {
+                    targetPlot.getBlock().setType(crop);
+                    personalInventory.put(seed, personalInventory.get(seed) - 1);
+                }
+
+                // Return to town center
+                npc.getNavigator().setTarget(city.getLocation());
+
+                // Add harvested crop to city inventory
+                city.addItem(crop, cropHarvested);
 
                 MarketItem item = MarketAPI.getInstance().getItem(crop);
                 if (item != null) {
                     double price = item.getCurrentPrice();
-                    double earnings = price * cropSold;
+                    double earnings = price * cropHarvested;
                     city.depositToTreasury(city.getEffectiveCurrency(null), earnings);
-                    Bukkit.getLogger().info("[Farmer] " + name + " harvested " + cropSold + "x " + crop + " and earned " + earnings);
+                    Bukkit.getLogger().info("[Farmer] " + name + " harvested " + cropHarvested + "x " + crop + " and earned " + earnings);
                 }
 
                 animateFarming(city);
-                markCooldown();
             }
-        }.runTaskLater(PluginCore.getInstance(), 60L); // 3 seconds delay
+        }.runTaskLater(PluginCore.getInstance(), 60L);
     }
 
     private Material getBestCrop(City city) {
@@ -98,11 +134,31 @@ public class Farmer extends Worker {
         return personalInventory;
     }
 
+    private double getProductivityMultiplier(Location loc) {
+        Material soil = loc.clone().subtract(0, 1, 0).getBlock().getType();
+        if (soil == Material.FARMLAND) return 1.2;
+        if (soil == Material.DIRT) return 0.9;
+        return 1.0;
+    }
+
+    private boolean tillSoil(Location loc) {
+        Material ground = loc.getBlock().getType();
+        Material above = loc.clone().add(0, 1, 0).getBlock().getType();
+
+        if ((ground == Material.DIRT || ground == Material.GRASS_BLOCK || ground == Material.COARSE_DIRT)
+                && above == Material.AIR) {
+            loc.getBlock().setType(Material.FARMLAND);
+            Bukkit.getLogger().info("[Farmer] Tilled soil at " + loc);
+            return true;
+        }
+        return false;
+    }
+
     private void animateFarming(City city) {
         NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
         if (npc != null && npc.isSpawned()) {
-            Location target = city.getLocation().clone().add(2 - new Random().nextInt(5), 0, 2 - new Random().nextInt(5));
-            npc.getNavigator().setTarget(target); // Walk to a nearby location
+            Location target = city.getLocation().clone().add(2 - RANDOM.nextInt(5), 0, 2 - RANDOM.nextInt(5));
+            npc.getNavigator().setTarget(target);
             if (npc.getEntity() instanceof Player playerEntity) {
                 playerEntity.swingMainHand();
             }

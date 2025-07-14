@@ -3,10 +3,7 @@ package com.brandon.globaleconomy.city;
 import com.brandon.globaleconomy.city.CityProductionManager;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 
 import java.io.Serializable;
@@ -277,6 +274,25 @@ public class City implements Serializable {
     public void addItem(Material material, int amount) {
         inventory.put(material, inventory.getOrDefault(material, 0) + amount);
     }
+
+    public List<Location> getFertilePlots(Material cropType) {
+        List<Location> fertile = new ArrayList<>();
+        World world = getLocation().getWorld();
+        Location center = getLocation();
+
+        for (int x = -10; x <= 10; x++) {
+            for (int z = -10; z <= 10; z++) {
+                Location loc = center.clone().add(x, 0, z);
+                loc.setY(world.getHighestBlockYAt(loc));
+                Material ground = loc.clone().subtract(0, 1, 0).getBlock().getType();
+                if (ground == Material.FARMLAND && loc.getBlock().getType() == Material.AIR) {
+                    fertile.add(loc.clone());
+                }
+            }
+        }
+        return fertile;
+    }
+
 
     public Map<Material, Integer> getCityInventory() {
         return inventory;
