@@ -1,23 +1,25 @@
 package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
-import com.brandon.globaleconomy.core.PluginCore;
+import com.brandon.globaleconomy.city.CityInventory;
+import com.brandon.globaleconomy.city.CityResourceScanner;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Chest;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Random;
+
+import static com.brandon.globaleconomy.core.PluginCore.getInstance;
 
 public class Woodsman extends Worker {
-    private static final long COOLDOWN_MS = 15000; // 15 seconds
+
+    private Location forestLocation;
+    private boolean headingToForest = true;
+    private long lastWorked = 0;
     private static final Random RANDOM = new Random();
-    private long lastWorkTime = 0;
 
     private static final List<Material> LOG_TYPES = List.of(
             Material.OAK_LOG, Material.BIRCH_LOG, Material.SPRUCE_LOG,
@@ -25,56 +27,53 @@ public class Woodsman extends Worker {
             Material.CHERRY_LOG, Material.MANGROVE_LOG
     );
 
-    public Woodsman(City city, String name, UUID npcId) {
-        super(city, name, WorkerRole.WOODSMAN, npcId);
+    public Woodsman(City city, String name, java.util.UUID uuid) {
+        super(city, name, WorkerRole.WOODSMAN, uuid);
     }
 
     @Override
     public void performWork(City city) {
-        if (System.currentTimeMillis() - lastWorkTime < COOLDOWN_MS) return;
-        lastWorkTime = System.currentTimeMillis();
+        if (System.currentTimeMillis() - lastWorked < 10000) return;
+        lastWorked = System.currentTimeMillis();
 
-        Map<String, Integer> resources = city.getResources();
+        if (forestLocation == null) {
+            forestLocation = CityResourceScanner.getNearestResource(city, CityResourceScanner.CityResourceType.FOREST);
+            if (forestLocation == null) {
+                city.log("§c[Woodsman] No forest found near " + city.getName());
+                return;
+            }
+        }
 
-        List<Material> availableLogs = LOG_TYPES.stream()
-                .filter(mat -> resources.getOrDefault(mat.name(), 0) > 0)
-                .collect(Collectors.toList());
+        NPC npc = getNPC();
+        if (npc == null || !npc.isSpawned()) {
+            city.log("§c[Woodsman] NPC " + getName() + " is not spawned.");
+            return;
+        }
 
-        if (availableLogs.isEmpty()) return;
+        if (headingToForest) {
+            npc.getNavigator().setTarget(forestLocation);
+            headingToForest = false;
+            return;
+        }
 
-        Material selectedLog = availableLogs.get(RANDOM.nextInt(availableLogs.size()));
-        int amount = 3 + RANDOM.nextInt(3); // 3–5 logs
-
-        Location loggingSite = city.getLocation().clone().add(10, 0, 10); // Arbitrary forest edge location
-        NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
-        if (npc == null || !npc.isSpawned()) return;
-
-        // Step 1: Go to forest
-        npc.getNavigator().setTarget(loggingSite);
-
-        // Step 2: After 3 seconds, simulate harvesting and return to town
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (!city.getProductionManager().produce(Woodsman.this, selectedLog.name(), amount)) {
-                    Bukkit.getLogger().info("[Woodsman] " + name + " was blocked from chopping " + amount + "x " + selectedLog.name());
-                    return;
-                }
+                Material logType = LOG_TYPES.get(RANDOM.nextInt(LOG_TYPES.size()));
+                int amount = 2 + RANDOM.nextInt(3);
 
-                city.addItem(selectedLog, amount);
+                CityInventory inventory = city.getInventory();
+                inventory.addItem(logType, amount);
 
-                // Step 3: Return to town
+                city.log("§7[Woodsman] " + getName() + " returned with " + amount + " " + logType.name());
+
                 npc.getNavigator().setTarget(city.getLocation());
-
-                // Step 4: Try depositing to city chest
-                Location chestLoc = city.getChestLocation();
-                if (chestLoc != null && chestLoc.getBlock().getState() instanceof Chest chest) {
-                    chest.getBlockInventory().addItem(new ItemStack(selectedLog, amount));
-                }
-
-                Bukkit.getLogger().info("[Woodsman] " + name + " chopped " + amount + "x " + selectedLog.name());
-                markCooldown();
+                headingToForest = true;
             }
-        }.runTaskLater(PluginCore.getInstance(), 60L); // Delay for realism
+        }.runTaskLater(getInstance(), 60L);
+    }
+
+    private NPC getNPC() {
+        return CitizensAPI.getNPCRegistry().getByUniqueId(getNpcId());
     }
 }

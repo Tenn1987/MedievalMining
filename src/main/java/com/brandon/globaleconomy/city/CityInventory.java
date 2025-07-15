@@ -33,6 +33,11 @@ public class CityInventory {
         return getQuantity(material) >= amount;
     }
 
+    public void addItem(Material material, int amount) {
+        int current = inventory.getOrDefault(material, 0);
+        inventory.put(material, Math.max(current - amount, 0));
+    }
+
     public void removeItem(Material material, int amount) {
         int current = inventory.getOrDefault(material, 0);
         inventory.put(material, Math.max(current - amount, 0));

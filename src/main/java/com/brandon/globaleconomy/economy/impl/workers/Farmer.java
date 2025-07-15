@@ -9,8 +9,6 @@ import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -40,16 +38,25 @@ public class Farmer extends Worker {
         lastWorkTime = System.currentTimeMillis();
 
         Material crop = getBestCrop(city);
-        if (crop == null) return;
+        if (crop == null) {
+            city.log("[Farmer] No crops available in biome for " + getName());
+            return;
+        }
 
         Material seed = getSeedFromCrop(crop);
         List<Location> fertilePlots = city.getFertilePlots(crop);
-        if (fertilePlots.isEmpty()) return;
+        if (fertilePlots.isEmpty()) {
+            city.log("[Farmer] No fertile plots found for " + crop.name());
+            return;
+        }
 
         Location targetPlot = fertilePlots.get(RANDOM.nextInt(fertilePlots.size()));
 
         NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
-        if (npc == null || !npc.isSpawned()) return;
+        if (npc == null || !npc.isSpawned()) {
+            city.log("[Farmer] NPC " + name + " is not spawned.");
+            return;
+        }
 
         npc.getNavigator().setTarget(targetPlot);
 
@@ -64,32 +71,17 @@ public class Farmer extends Worker {
 
                 Location soil = targetPlot.clone().subtract(0, 1, 0);
 
-                // Optional: Require hoe from city inventory
-                /*
-                if (!city.hasItem(Material.STONE_HOE)) {
-                    Bukkit.getLogger().info("[Farmer] " + name + " needs a hoe to till soil.");
-                    return;
-                } else {
-                    city.removeItem(Material.STONE_HOE, 1);
-                }
-                */
-
-                // Hoe the ground if not already farmland
                 if (soil.getBlock().getType() != Material.FARMLAND) {
                     boolean hoed = tillSoil(soil);
                     if (!hoed) return;
                 }
 
-                // Replant if seed is available
                 if (personalInventory.getOrDefault(seed, 0) > 0) {
                     targetPlot.getBlock().setType(crop);
                     personalInventory.put(seed, personalInventory.get(seed) - 1);
                 }
 
-                // Return to town center
                 npc.getNavigator().setTarget(city.getLocation());
-
-                // Add harvested crop to city inventory
                 city.addItem(crop, cropHarvested);
 
                 MarketItem item = MarketAPI.getInstance().getItem(crop);
@@ -130,10 +122,6 @@ public class Farmer extends Worker {
         personalInventory.put(item, personalInventory.getOrDefault(item, 0) + amount);
     }
 
-    public Map<Material, Integer> getPersonalInventory() {
-        return personalInventory;
-    }
-
     private double getProductivityMultiplier(Location loc) {
         Material soil = loc.clone().subtract(0, 1, 0).getBlock().getType();
         if (soil == Material.FARMLAND) return 1.2;
@@ -159,9 +147,10 @@ public class Farmer extends Worker {
         if (npc != null && npc.isSpawned()) {
             Location target = city.getLocation().clone().add(2 - RANDOM.nextInt(5), 0, 2 - RANDOM.nextInt(5));
             npc.getNavigator().setTarget(target);
-            if (npc.getEntity() instanceof Player playerEntity) {
-                playerEntity.swingMainHand();
-            }
         }
+    }
+
+    public Map<Material, Integer> getPersonalInventory() {
+        return personalInventory;
     }
 }

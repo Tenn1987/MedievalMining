@@ -1,3 +1,4 @@
+// === WorkerTrait.java ===
 package com.brandon.globaleconomy.npc.impl;
 
 import com.brandon.globaleconomy.city.City;
@@ -13,14 +14,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
 
 import java.util.UUID;
 
 public class WorkerTrait extends Trait {
     private Worker worker;
+    private Location currentTaskTarget;
 
     public WorkerTrait() {
         super("workertrait");
@@ -34,19 +34,27 @@ public class WorkerTrait extends Trait {
         return worker;
     }
 
+    public void setTaskTarget(Location location) {
+        this.currentTaskTarget = location;
+    }
+
+    public Location getTaskTarget() {
+        return currentTaskTarget;
+    }
+
     @Override
     public void run() {
         if (npc == null || !npc.isSpawned()) return;
 
-        // Log for debugging
         Bukkit.getLogger().info("[DEBUG] WorkerTrait.run() fired.");
         Bukkit.getLogger().info("[DEBUG] NPC is spawned: " + getNPC().getName());
 
-        // Move NPC to target location
-        Location targetLocation = getTargetLocation();
-        moveNPCToLocation(targetLocation);
+        if (currentTaskTarget != null) {
+            moveNPCToLocation(currentTaskTarget);
+        } else {
+            moveNPCToLocation(getTargetLocation());
+        }
 
-        // Check and perform work if the worker is ready
         if (worker != null && worker.isReadyToWork()) {
             try {
                 worker.performWork(worker.getCity());
@@ -56,21 +64,18 @@ public class WorkerTrait extends Trait {
         }
     }
 
-
     private void moveNPCToLocation(Location targetLocation) {
-        if (npc.isSpawned()) {
-            // Move the NPC using Citizens' Navigator
-            Navigator navigator = npc.getNavigator();  // Use the correct class
-            navigator.setTarget(targetLocation);  // Set the target location for movement
+        if (npc.isSpawned() && targetLocation != null) {
+            Navigator navigator = npc.getNavigator();
+            navigator.setTarget(targetLocation);
         }
     }
 
     private Location getTargetLocation() {
-        if (worker == null) return npc.getEntity().getLocation(); // Safe fallback
+        if (worker == null) return npc.getEntity().getLocation();
         City city = worker.getCity();
         return city != null ? city.getLocation() : npc.getEntity().getLocation();
     }
-
 
     @Override
     public boolean isRunImplemented() {
@@ -107,7 +112,7 @@ public class WorkerTrait extends Trait {
                 } else {
                     System.err.println("[WorkerTrait] Could not find city '" + cityName + "' even after delayed lookup.");
                 }
-            }, 20L); // Delay 1 second
+            }, 20L);
 
         } catch (Exception e) {
             System.err.println("[WorkerTrait] Error loading trait data: " + e.getMessage());
@@ -118,7 +123,6 @@ public class WorkerTrait extends Trait {
     public void onPlayerInteract(PlayerInteractEntityEvent event) {
         if (npc != null && event.getRightClicked().getUniqueId().equals(npc.getUniqueId())) {
             event.setCancelled(true);
-
             if (worker != null) {
                 WorkerTradeGUI.open(event.getPlayer(), worker);
             }

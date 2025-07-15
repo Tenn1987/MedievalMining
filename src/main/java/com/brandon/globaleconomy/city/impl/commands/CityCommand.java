@@ -37,134 +37,165 @@ public class CityCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED + "Only players can use this command.");
             return true;
         }
-        Player player = (Player) sender;
 
         if (args.length == 0) {
             sendUsage(player);
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("info") && args.length >= 2) {
-            City city = cityManager.getCity(args[1]);
-            if (city == null) {
-                player.sendMessage(ChatColor.RED + "City not found.");
+        switch (args[0].toLowerCase()) {
+            case "info":
+                return handleInfo(player, args);
+            case "inventory":
+                return handleInventory(player, args);
+            case "delete":
+                return handleDelete(player, args);
+            case "create":
+                return handleCreate(player, args);
+            default:
+                sendUsage(player);
                 return true;
-            }
+        }
+    }
 
-            long total = city.getWorkers().size();
-            long unemployed = city.getWorkers().stream()
-                    .filter(w -> w.getRole() == WorkerRole.RESIDENT)
-                    .count();
-            double unemploymentRate = total > 0 ? (double) unemployed / total * 100 : 0.0;
-
-
-
-            player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
-            player.sendMessage(ChatColor.GRAY + "Nation: " + city.getNation());
-            player.sendMessage(ChatColor.GRAY + "Population: " + city.getPopulation());
-            player.sendMessage(ChatColor.GRAY + "Mayor: " + city.getMayorDisplayName());
-            player.sendMessage(ChatColor.GRAY + "Currency: " + city.getEffectiveCurrency(cityManager));
-            if (city.getParentCityName() != null) {
-                player.sendMessage(ChatColor.GRAY + "Parent City: " + city.getParentCityName());
-            }
-            player.sendMessage(ChatColor.GRAY + "Balance: " + city.getCityBalance(city.getEffectiveCurrency(cityManager)));
-            player.sendMessage(ChatColor.GRAY + "Unemployment Rate: " + String.format("%.1f", unemploymentRate) + "%");
-
-            player.sendMessage(ChatColor.DARK_GREEN + "Top 3 Resources:");
-            city.getResources().entrySet().stream()
-                    .filter(e -> e.getValue() > 0)
-                    .sorted((a, b) -> b.getValue() - a.getValue())
-                    .limit(3)
-                    .forEach(entry -> player.sendMessage(ChatColor.GRAY + "- " + entry.getKey() + ": " + entry.getValue()));
-
+    private boolean handleInfo(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /city info <name>");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("inventory") && args.length >= 2) {
-            City city = cityManager.getCity(args[1]);
-            if (city == null) {
-                player.sendMessage(ChatColor.RED + "City not found.");
-                return true;
-            }
-
-            player.sendMessage(ChatColor.GOLD + "Inventory for " + city.getName() + ":");
-            for (Map.Entry<Material, Integer> entry : city.getCityInventory().entrySet()) {
-                if (entry.getValue() > 0) {
-                    player.sendMessage(ChatColor.GRAY + "- " + entry.getKey().name() + ": " + entry.getValue());
-                }
-            }
+        City city = cityManager.getCity(args[1]);
+        if (city == null) {
+            player.sendMessage(ChatColor.RED + "City not found.");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("delete") && args.length >= 2) {
-            String name = args[1];
-            if (cityManager.removeCity(name)) {
-                player.sendMessage(ChatColor.RED + "City '" + name + "' deleted.");
-            } else {
-                player.sendMessage(ChatColor.RED + "City not found.");
-            }
+        long total = city.getWorkers().size();
+        long unemployed = city.getWorkers().stream()
+                .filter(w -> w.getRole() == WorkerRole.RESIDENT)
+                .count();
+        double unemploymentRate = total > 0 ? (double) unemployed / total * 100 : 0.0;
+
+        player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
+        player.sendMessage(ChatColor.GRAY + "Nation: " + city.getNation());
+        player.sendMessage(ChatColor.GRAY + "Population: " + city.getPopulation());
+        player.sendMessage(ChatColor.GRAY + "Mayor: " + city.getMayorDisplayName());
+        player.sendMessage(ChatColor.GRAY + "Currency: " + city.getEffectiveCurrency(cityManager));
+        if (city.getParentCityName() != null) {
+            player.sendMessage(ChatColor.GRAY + "Parent City: " + city.getParentCityName());
+        }
+        player.sendMessage(ChatColor.GRAY + "Balance: " + city.getCityBalance(city.getEffectiveCurrency(cityManager)));
+        player.sendMessage(ChatColor.GRAY + "Unemployment Rate: " + String.format("%.1f", unemploymentRate) + "%");
+
+        player.sendMessage(ChatColor.DARK_GREEN + "Top 3 Resources:");
+        city.getResources().entrySet().stream()
+                .filter(e -> e.getValue() > 0)
+                .sorted((a, b) -> b.getValue() - a.getValue())
+                .limit(3)
+                .forEach(entry -> player.sendMessage(ChatColor.GRAY + "- " + entry.getKey() + ": " + entry.getValue()));
+
+        return true;
+    }
+
+    private boolean handleInventory(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /city inventory <name>");
             return true;
         }
 
-        if (args[0].equalsIgnoreCase("create") && args.length >= 4) {
-            String name = args[1];
-            String nation = args[2];
-            String currency = args[3];
-            String parentCity = args.length >= 5 ? args[4] : null;
+        City city = cityManager.getCity(args[1]);
+        if (city == null) {
+            player.sendMessage(ChatColor.RED + "City not found.");
+            return true;
+        }
 
-            // Determine backing material
-            String backingInput = args.length >= 6 ? args[5].toUpperCase() : "GOLD_INGOT";
-            Material backingMaterial = Material.matchMaterial(backingInput);
-            if (backingMaterial == null || !Set.of(
-                    Material.GOLD_INGOT,
-                    Material.GOLD_NUGGET,
-                    Material.IRON_INGOT,
-                    Material.IRON_NUGGET,
-                    Material.COPPER_INGOT,
-                    Material.EMERALD,
-                    Material.DIAMOND,
-                    Material.NETHERITE_INGOT
-            ).contains(backingMaterial)) {
-                player.sendMessage(ChatColor.RED + "Invalid or unsupported backing material.");
-                player.sendMessage(ChatColor.YELLOW + "Allowed: GOLD_INGOT, IRON_INGOT, COPPER_INGOT, EMERALD, DIAMOND, NETHERITE_INGOT");
-                return true;
+        player.sendMessage(ChatColor.GOLD + "Inventory for " + city.getName() + ":");
+        for (Map.Entry<Material, Integer> entry : city.getCityInventory().entrySet()) {
+            if (entry.getValue() > 0) {
+                player.sendMessage(ChatColor.GRAY + "- " + entry.getKey().name() + ": " + entry.getValue());
             }
+        }
+        return true;
+    }
 
-            // Register currency if new
-            if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
-                ExchangeRateManager.getInstance().registerCurrency(currency, 1.0, backingMaterial.name());
-            }
+    private boolean handleDelete(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /city delete <name>");
+            return true;
+        }
 
-            // Create city
-            Location loc = player.getLocation();
-            cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);
+        String name = args[1];
+        if (cityManager.removeCity(name)) {
+            player.sendMessage(ChatColor.RED + "City '" + name + "' deleted.");
+        } else {
+            player.sendMessage(ChatColor.RED + "City not found.");
+        }
+        return true;
+    }
+
+    private boolean handleCreate(Player player, String[] args) {
+        if (args.length < 4) {
+            player.sendMessage(ChatColor.RED + "Usage: /city create <name> <nation> <currency> [parentCity] [backingMaterial]");
+            return true;
+        }
+
+        String name = args[1];
+        String nation = args[2];
+        String currency = args[3];
+        String parentCity = args.length >= 5 ? args[4] : null;
+
+        // Determine backing material
+        String backingInput = args.length >= 6 ? args[5].toUpperCase() : "GOLD_INGOT";
+        Material backingMaterial = Material.matchMaterial(backingInput);
+        Set<Material> allowed = Set.of(
+                Material.GOLD_INGOT,
+                Material.GOLD_NUGGET,
+                Material.IRON_INGOT,
+                Material.IRON_NUGGET,
+                Material.COPPER_INGOT,
+                Material.EMERALD,
+                Material.DIAMOND,
+                Material.NETHERITE_INGOT
+        );
+
+        if (backingMaterial == null || !allowed.contains(backingMaterial)) {
+            player.sendMessage(ChatColor.RED + "Invalid or unsupported backing material.");
+            player.sendMessage(ChatColor.YELLOW + "Allowed: GOLD_INGOT, IRON_INGOT, COPPER_INGOT, EMERALD, DIAMOND, NETHERITE_INGOT");
+            return true;
+        }
+
+        // Register currency if new
+        if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
+            ExchangeRateManager.getInstance().registerCurrency(currency, 1.0, backingMaterial.name());
+        }
+
+        // Create city
+        Location loc = player.getLocation();
+        cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);
+        cityYamlLoader.saveCities(cityManager.getCities());
+
+        City city = cityManager.getCity(name);
+        claimManager.claimChunksForCity(city);
+        dynmapManager.addOrUpdateCityAreaPolygon(city, claimManager.getChunksForCity(city));
+
+        // Try to auto-detect chest
+        Block target = player.getTargetBlockExact(5);
+        if (target != null && target.getType() == Material.CHEST) {
+            city.setChestLocation(target.getLocation());
             cityYamlLoader.saveCities(cityManager.getCities());
-            claimManager.claimChunksForCity(cityManager.getCity(name));
-            dynmapManager.addOrUpdateCityAreaPolygon(cityManager.getCity(name), claimManager.getChunksForCity(cityManager.getCity(name)));
-            City city = cityManager.getCity(name);
-
-            // Try to auto-detect chest
-            Block target = player.getTargetBlockExact(5);
-            if (target != null && target.getType() == Material.CHEST) {
-                city.setChestLocation(target.getLocation());
-                cityYamlLoader.saveCities(cityManager.getCities());
-                player.sendMessage(ChatColor.YELLOW + "Chest automatically set at: " +
-                        target.getLocation().getBlockX() + ", " +
-                        target.getLocation().getBlockY() + ", " +
-                        target.getLocation().getBlockZ());
-            } else {
-                player.sendMessage(ChatColor.RED + "No nearby chest found. Use /city setchest " + name + " manually.");
-            }
-
-            player.sendMessage(ChatColor.GREEN + "City '" + name + "' created.");
-            return true;
+            player.sendMessage(ChatColor.YELLOW + "Chest automatically set at: " +
+                    target.getLocation().getBlockX() + ", " +
+                    target.getLocation().getBlockY() + ", " +
+                    target.getLocation().getBlockZ());
+        } else {
+            player.sendMessage(ChatColor.RED + "No nearby chest found. Use /city setchest " + name + " manually.");
         }
 
-        sendUsage(player);
+        player.sendMessage(ChatColor.GREEN + "City '" + name + "' created.");
         return true;
     }
 
@@ -175,7 +206,6 @@ public class CityCommand implements CommandExecutor {
         player.sendMessage(ChatColor.YELLOW + "/city create <name> <nation> <currency> [parentCity] [backingMaterial]");
         player.sendMessage(ChatColor.YELLOW + "/city delete <name>");
         player.sendMessage(ChatColor.YELLOW + "/city setcurrency <name> <currency>");
-        player.sendMessage(ChatColor.YELLOW + "/city setchest <name>"); // <-- add this line
+        player.sendMessage(ChatColor.YELLOW + "/city setchest <name>");
     }
-
 }
