@@ -2,7 +2,7 @@ package com.brandon.globaleconomy.npc.impl;
 
 import com.brandon.globaleconomy.city.City;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
-import com.brandon.globaleconomy.npc.impl.WorkerTrait;
+import com.brandon.globaleconomy.npc.traits.WorkerTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;

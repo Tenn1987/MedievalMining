@@ -58,7 +58,9 @@ public class Farmer extends Worker {
             return;
         }
 
+        npc.getNavigator().getLocalParameters().useNewPathfinder(true);
         npc.getNavigator().setTarget(targetPlot);
+
 
         new BukkitRunnable() {
             @Override
@@ -81,7 +83,9 @@ public class Farmer extends Worker {
                     personalInventory.put(seed, personalInventory.get(seed) - 1);
                 }
 
-                npc.getNavigator().setTarget(city.getLocation());
+                npc.getNavigator().getLocalParameters().useNewPathfinder(true);
+                npc.getNavigator().setTarget(targetPlot);
+
                 city.addItem(crop, cropHarvested);
 
                 MarketItem item = MarketAPI.getInstance().getItem(crop);
@@ -146,9 +150,11 @@ public class Farmer extends Worker {
         NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
         if (npc != null && npc.isSpawned()) {
             Location target = city.getLocation().clone().add(2 - RANDOM.nextInt(5), 0, 2 - RANDOM.nextInt(5));
+            npc.getNavigator().getLocalParameters().useNewPathfinder(true);
             npc.getNavigator().setTarget(target);
         }
     }
+
 
     public Map<Material, Integer> getPersonalInventory() {
         return personalInventory;

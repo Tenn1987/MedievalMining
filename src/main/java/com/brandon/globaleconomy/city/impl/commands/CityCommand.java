@@ -8,6 +8,7 @@ import com.brandon.globaleconomy.dynmap.DynmapManager;
 import com.brandon.globaleconomy.economy.currencies.CurrencyManager;
 import com.brandon.globaleconomy.economy.currencies.ExchangeRateManager;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
+import com.brandon.globaleconomy.npc.impl.BuilderSpawner;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -75,9 +76,7 @@ public class CityCommand implements CommandExecutor {
         }
 
         long total = city.getWorkers().size();
-        long unemployed = city.getWorkers().stream()
-                .filter(w -> w.getRole() == WorkerRole.RESIDENT)
-                .count();
+        long unemployed = city.getWorkers().stream().filter(w -> w.getRole() == WorkerRole.RESIDENT).count();
         double unemploymentRate = total > 0 ? (double) unemployed / total * 100 : 0.0;
 
         player.sendMessage(ChatColor.GOLD + "City: " + city.getName());
@@ -168,21 +167,19 @@ public class CityCommand implements CommandExecutor {
             return true;
         }
 
-        // Register currency if new
         if (!ExchangeRateManager.getInstance().hasCurrency(currency)) {
             ExchangeRateManager.getInstance().registerCurrency(currency, 1.0, backingMaterial.name());
         }
 
-        // Create city
         Location loc = player.getLocation();
         cityManager.addCityWithMayor(name, nation, loc, 1, cityManager.getRandomColor(), currency, player.getUniqueId(), parentCity);
-        cityYamlLoader.saveCities(cityManager.getCities());
-
         City city = cityManager.getCity(name);
+
+        cityYamlLoader.saveCities(cityManager.getCities());
         claimManager.claimChunksForCity(city);
         dynmapManager.addOrUpdateCityAreaPolygon(city, claimManager.getChunksForCity(city));
 
-        // Try to auto-detect chest
+        // Optional chest setting
         Block target = player.getTargetBlockExact(5);
         if (target != null && target.getType() == Material.CHEST) {
             city.setChestLocation(target.getLocation());
@@ -194,6 +191,9 @@ public class CityCommand implements CommandExecutor {
         } else {
             player.sendMessage(ChatColor.RED + "No nearby chest found. Use /city setchest " + name + " manually.");
         }
+
+        // Spawn the Builder NPC
+        BuilderSpawner.spawn(city);
 
         player.sendMessage(ChatColor.GREEN + "City '" + name + "' created.");
         return true;

@@ -19,6 +19,8 @@ import com.brandon.globaleconomy.gui.MerchantTradeGUI;
 import com.brandon.globaleconomy.gui.MoneyChangerGUI;
 import com.brandon.globaleconomy.listeners.*;
 
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.trait.TraitInfo;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
@@ -49,11 +51,20 @@ public class PluginCore extends JavaPlugin {
         // === (0) Register custom Citizens trait before any NPCs are created ===
         try {
             net.citizensnpcs.api.trait.TraitInfo workerTraitInfo =
-                    net.citizensnpcs.api.trait.TraitInfo.create(com.brandon.globaleconomy.npc.impl.WorkerTrait.class).withName("workertrait");
+                    net.citizensnpcs.api.trait.TraitInfo.create(com.brandon.globaleconomy.npc.traits.WorkerTrait.class).withName("workertrait");
             net.citizensnpcs.api.CitizensAPI.getTraitFactory().registerTrait(workerTraitInfo);
             getLogger().info("WorkerTrait registered successfully.");
         } catch (Exception e) {
             getLogger().warning("Failed to register WorkerTrait with Citizens.");
+            e.printStackTrace();
+        }
+        try {
+            TraitInfo builderTraitInfo =
+                    TraitInfo.create(com.brandon.globaleconomy.npc.traits.BuilderTrait.class).withName("buildertrait");
+            CitizensAPI.getTraitFactory().registerTrait(builderTraitInfo);
+            getLogger().info("BuilderTrait registered successfully.");
+        } catch (Exception e) {
+            getLogger().warning("Failed to register BuilderTrait with Citizens.");
             e.printStackTrace();
         }
 

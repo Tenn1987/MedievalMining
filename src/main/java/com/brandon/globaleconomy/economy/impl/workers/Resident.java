@@ -6,16 +6,13 @@ import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Random;
 import java.util.UUID;
 
-import static com.brandon.globaleconomy.core.PluginCore.getInstance;
-
 public class Resident extends Worker {
-    private long lastWanderTime = 0;
-    private static final long WANDER_COOLDOWN_MS = 12000;
+    private static final long IDLE_MOVE_INTERVAL = 12000;
+    private long lastMoveTime = 0;
     private static final Random RANDOM = new Random();
 
     public Resident(City city, String name, UUID uuid) {
@@ -24,31 +21,22 @@ public class Resident extends Worker {
 
     @Override
     public void performWork(City city) {
-        if (System.currentTimeMillis() - lastWanderTime < WANDER_COOLDOWN_MS) return;
-        lastWanderTime = System.currentTimeMillis();
+        System.out.println("[Resident] performWork called");
+        if (System.currentTimeMillis() - lastMoveTime < IDLE_MOVE_INTERVAL) return;
+        lastMoveTime = System.currentTimeMillis();
 
-        NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(getNpcId());
+        NPC npc = CitizensAPI.getNPCRegistry().getByUniqueId(npcId);
         if (npc == null || !npc.isSpawned()) return;
 
         Location base = city.getLocation();
-        World world = base.getWorld();
-        if (world == null) return;
+        Location target = base.clone().add(-5 + RANDOM.nextInt(11), 0, -5 + RANDOM.nextInt(11));
 
-        int dx = RANDOM.nextInt(11) - 5; // -5 to +5
-        int dz = RANDOM.nextInt(11) - 5;
-        Location wanderTarget = base.clone().add(dx, 0, dz);
-        wanderTarget.setY(world.getHighestBlockYAt(wanderTarget));
+        World world = target.getWorld();
+        int y = world.getHighestBlockYAt(target.getBlockX(), target.getBlockZ());
+        target.setY(y);
 
-        npc.getNavigator().setTarget(wanderTarget);
+        npc.getNavigator().setTarget(target);
+        Bukkit.getLogger().info("[Resident] " + getName() + " moving to " + target);
 
-        // Optional: Return to center after wandering
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (npc.isSpawned()) {
-                    npc.getNavigator().setTarget(city.getLocation());
-                }
-            }
-        }.runTaskLater(getInstance(), 60L); // return after ~3 seconds
     }
 }

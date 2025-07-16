@@ -1,6 +1,6 @@
 package com.brandon.globaleconomy.commands;
 
-import com.brandon.globaleconomy.npc.impl.WorkerTrait;
+import com.brandon.globaleconomy.npc.traits.WorkerTrait;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.Bukkit;
