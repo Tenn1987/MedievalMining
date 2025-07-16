@@ -3,11 +3,17 @@ package com.brandon.globaleconomy.city;
 import com.brandon.globaleconomy.city.CityProductionManager;
 import com.brandon.globaleconomy.economy.impl.workers.Worker;
 import com.brandon.globaleconomy.economy.impl.workers.WorkerRole;
+import com.brandon.globaleconomy.npc.traits.WorkerTrait;
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class City implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -82,6 +88,20 @@ public class City implements Serializable {
         long unemployed = workers.stream().filter(w -> w.getRole() == WorkerRole.RESIDENT).count();
         return total > 0 ? (double) unemployed / total * 100 : 0.0;
     }
+
+    public List<NPC> getUnemployedNPCs() {
+        return StreamSupport.stream(CitizensAPI.getNPCRegistry().spliterator(), false)
+                .filter(npc -> npc.hasTrait(WorkerTrait.class))
+                .filter(npc -> {
+                    WorkerTrait trait = npc.getTrait(WorkerTrait.class);
+                    Worker worker = trait.getWorker();
+                    return worker != null
+                            && getName().equalsIgnoreCase(worker.getCity().getName())
+                            && worker.getRole() == WorkerRole.RESIDENT;
+                })
+                .collect(Collectors.toList());
+    }
+
 
     public void addResource(String name, int amount) {
         resources.put(name, resources.getOrDefault(name, 0) + amount);
