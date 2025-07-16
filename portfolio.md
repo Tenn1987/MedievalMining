@@ -25,6 +25,8 @@ This project demonstrates the integration of economic logic, NPC AI behavior, ci
 - **Vault**, **Citizens2**, **Dynmap**
 - **YAML for data persistence**
 - **Maven project structure**
+- **This project was developed with educational support and technical guidance from AI tools (ChatGPT-4), used to assist with planning, formatting, and debugging.**
+
 
 ---
 
