@@ -8,6 +8,7 @@ import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.Location;
 
 import java.io.Serializable;
 import java.util.*;
@@ -34,6 +35,7 @@ public class City implements Serializable {
     private final Map<Material, Integer> inventory = new HashMap<>();
     private final Map<String, Integer> resources = new HashMap<>();
     private final Map<String, Double> treasury = new HashMap<>();
+    private final Set<Location> builtPlots = new HashSet<>();
 
     // Workers and mayor
     private List<Worker> workers = new ArrayList<>();
@@ -80,7 +82,7 @@ public class City implements Serializable {
     }
 
     public Map<Material, Integer> getAllCityInventory() {
-        return new HashMap<>(inventory); // ✅ This one has Material keys
+        return new HashMap<>(inventory);
     }
 
     public double getUnemploymentRate() {
@@ -102,15 +104,10 @@ public class City implements Serializable {
                 .collect(Collectors.toList());
     }
 
-
     public void addResource(String name, int amount) {
         resources.put(name, resources.getOrDefault(name, 0) + amount);
     }
 
-
-
-
-    // Getters
     public String getName() { return name; }
     public String getNation() { return nation; }
     public Location getLocation() { return location; }
@@ -122,7 +119,6 @@ public class City implements Serializable {
     public CityInventory getInventory() { return cityInventory; }
     public Map<String, Integer> getResources() { return resources; }
     public CityProductionManager getProductionManager() { return productionManager; }
-
     public boolean hasPlayerMayor() { return mayorId != null; }
     public boolean hasNpcMayor() { return mayorNpcId != null; }
     public UUID getMayorId() { return mayorId; }
@@ -132,7 +128,6 @@ public class City implements Serializable {
     public String getParentCityName() { return parentCityName; }
     public boolean isForceUseParentCurrency() { return forceUseParentCurrency; }
 
-    // Setters
     public void setPrimaryCurrency(String currency) { this.primaryCurrency = currency; }
     public void setChestLocation(Location chestLocation) { this.chestLocation = chestLocation; }
     public void setWorkers(List<Worker> workers) { this.workers = workers; }
@@ -143,10 +138,7 @@ public class City implements Serializable {
     public void setParentCityName(String parentCityName) { this.parentCityName = parentCityName; }
     public void setForceUseParentCurrency(boolean force) { this.forceUseParentCurrency = force; }
     public void setColor(String color) { this.color = color; }
-    public void removeItem(Material material, int amount) {
-        cityInventory.removeItem(material, amount);
-    }
-
+    public void removeItem(Material material, int amount) { cityInventory.removeItem(material, amount); }
 
     public String getEffectiveCurrency(CityManager cityManager) {
         if (forceUseParentCurrency && parentCityName != null) {
@@ -156,7 +148,6 @@ public class City implements Serializable {
         return primaryCurrency;
     }
 
-    // Treasury methods
     public void depositToTreasury(String currency, double amount) {
         treasury.merge(currency, amount, Double::sum);
     }
@@ -178,7 +169,6 @@ public class City implements Serializable {
         return new HashMap<>(treasury);
     }
 
-    // Bed management
     public void addBedLocation(Location bedLoc) {
         if (!bedLocations.contains(bedLoc)) bedLocations.add(bedLoc);
     }
@@ -197,7 +187,7 @@ public class City implements Serializable {
             return player != null ? player.getName() : "Unknown";
         } else if (hasNpcMayor()) {
             try {
-                net.citizensnpcs.api.npc.NPC npc = net.citizensnpcs.api.CitizensAPI.getNPCRegistry().getById(mayorNpcId);
+                NPC npc = CitizensAPI.getNPCRegistry().getById(mayorNpcId);
                 return npc != null ? "[NPC] " + npc.getFullName() : "Unknown NPC";
             } catch (Exception e) {
                 return "NPC:" + mayorNpcId;
@@ -218,64 +208,20 @@ public class City implements Serializable {
         return false;
     }
 
-    // Resource scanning
-    public void scanForResources(int radius) {
-        if (location == null || location.getWorld() == null) return;
-        resources.clear();
-
-        int cx = location.getBlockX();
-        int cz = location.getBlockZ();
-        int yMin = Math.max(0, location.getBlockY() - 32);
-        int yMax = Math.min(255, location.getBlockY() + 32);
-
-        String[] types = {
-                "COAL_ORE", "IRON_ORE", "GOLD_ORE", "COPPER_ORE", "DIAMOND_ORE", "EMERALD_ORE",
-                "REDSTONE_ORE", "LAPIS_ORE", "DEEPSLATE_COAL_ORE", "DEEPSLATE_IRON_ORE",
-                "DEEPSLATE_GOLD_ORE", "DEEPSLATE_COPPER_ORE", "DEEPSLATE_DIAMOND_ORE",
-                "DEEPSLATE_EMERALD_ORE", "DEEPSLATE_REDSTONE_ORE", "DEEPSLATE_LAPIS_ORE",
-                "STONE", "DIORITE", "GRANITE", "SANDSTONE", "DEEPSLATE", "OAK_LOG", "BIRCH_LOG",
-                "SPRUCE_LOG", "JUNGLE_LOG", "ACACIA_LOG", "DARK_OAK_LOG", "CHERRY_LOG", "MANGROVE_LOG",
-                "WHEAT", "CARROTS", "POTATOES", "BEETROOTS", "PUMPKIN", "MELON",
-                "SUGAR_CANE", "CACTUS", "BAMBOO", "COCOA", "SWEET_BERRIES", "GLOW_BERRIES", "KELP",
-                "SEAGRASS", "MANGROVE_ROOTS", "MOSS_BLOCK", "AZALEA", "FLOWERING_AZALEA",
-                "CLAY", "SAND", "GRAVEL", "ICE", "SNOW_BLOCK", "DRIPSTONE_BLOCK", "MUD"
-        };
-
-        for (String t : types) resources.put(t, 0);
-
-        for (int x = cx - radius; x <= cx + radius; x++) {
-            for (int z = cz - radius; z <= cz + radius; z++) {
-                for (int y = yMin; y <= yMax; y++) {
-                    Block block = location.getWorld().getBlockAt(x, y, z);
-                    String name = block.getType().name();
-                    if (resources.containsKey(name)) {
-                        resources.put(name, resources.get(name) + 1);
-                    }
-                }
-            }
-        }
+    public Set<Location> getBuiltPlots() {
+        return builtPlots;
     }
 
-    public boolean isLocationInCity(Location loc) {
-        if (loc == null || location == null || !loc.getWorld().equals(location.getWorld())) return false;
-        double dx = loc.getBlockX() - location.getBlockX();
-        double dz = loc.getBlockZ() - location.getBlockZ();
-        return Math.sqrt(dx * dx + dz * dz) <= 48;
+    public void addBuiltPlot(Location loc) {
+        builtPlots.add(loc);
     }
 
-    public String getColorCode() {
-        return color;
-    }
-
-    // Material Inventory API
-    public boolean useMaterial(Material material) {
-        String key = material.name();
-        int count = resources.getOrDefault(key, 0);
-        if (count > 0) {
-            resources.put(key, count - 1);
-            return true;
-        }
-        return false;
+    public boolean isPlotUsed(Location loc) {
+        return builtPlots.stream().anyMatch(l ->
+                l.getWorld().equals(loc.getWorld()) &&
+                        l.getBlockX() == loc.getBlockX() &&
+                        l.getBlockZ() == loc.getBlockZ()
+        );
     }
 
     public boolean hasItem(Material material) {
@@ -313,13 +259,34 @@ public class City implements Serializable {
         return fertile;
     }
 
-
     public Map<Material, Integer> getCityInventory() {
         return inventory;
     }
 
     public void log(String message) {
         Bukkit.getLogger().info("[City: " + getName() + "] " + message);
+    }
+
+    // Scan nearby terrain to detect resource types (uses CityResourceScanner)
+    public void scanForResources(int radius) {
+        CityResourceScanner scanner = new CityResourceScanner();
+        for (CityResourceScanner.CityResourceType type : CityResourceScanner.CityResourceType.values()) {
+            Location loc = CityResourceScanner.getNearestResource(this, type);
+            if (loc != null) {
+                this.addResource(type.name(), 1); // Treat presence as 1 unit
+            }
+        }
+    }
+
+    // Check if a given location falls within this city's boundaries
+    public boolean isLocationInCity(Location loc) {
+        World cityWorld = location.getWorld();
+        if (!cityWorld.equals(loc.getWorld())) return false;
+
+        int dx = Math.abs(location.getBlockX() - loc.getBlockX());
+        int dz = Math.abs(location.getBlockZ() - loc.getBlockZ());
+
+        return dx <= 32 && dz <= 32; // Example: 64x64 claim radius
     }
 
 }

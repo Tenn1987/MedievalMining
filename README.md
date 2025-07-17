@@ -21,7 +21,8 @@ and economic modeling in multiplayer environments.
 
 ### 👷 NPC Worker System
 - Role-based AI workers: Farmer, Miner, Guard, Merchant, Builder, Caravaner
-- Economic production based on resources and supply/demand
+- Economchat gpt
+- ic production based on resources and supply/demand
 - NPCs interact with city inventories and treasuries
 
 ### 🪙 Dynamic Economy

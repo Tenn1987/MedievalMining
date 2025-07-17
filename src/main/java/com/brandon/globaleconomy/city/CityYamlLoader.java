@@ -5,6 +5,7 @@ import com.brandon.globaleconomy.economy.impl.workers.WorkerFactory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.inventory.Inventory;
@@ -58,6 +59,13 @@ public class CityYamlLoader {
                 }
             }
             cityData.put("workers", workers);
+
+            // Save builtPlots
+            List<String> builtPlotStrings = city.getBuiltPlots().stream()
+                    .map(loc -> loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ())
+                    .collect(Collectors.toList());
+            cityData.put("builtPlots", builtPlotStrings);
+
             saveMap.put(city.getName(), cityData);
         }
 
@@ -106,6 +114,23 @@ public class CityYamlLoader {
                         int cz = (int) cityData.get("chestZ");
                         Location chestLoc = new Location(Bukkit.getWorld(chestWorld), cx, cy, cz);
                         city.setChestLocation(chestLoc);
+                    }
+
+                    // Load builtPlots
+                    List<String> builtPlotStrings = (List<String>) cityData.get("builtPlots");
+                    if (builtPlotStrings != null) {
+                        for (String s : builtPlotStrings) {
+                            String[] parts = s.split(",");
+                            if (parts.length == 4) {
+                                World w = Bukkit.getWorld(parts[0]);
+                                int bx = Integer.parseInt(parts[1]);
+                                int by = Integer.parseInt(parts[2]);
+                                int bz = Integer.parseInt(parts[3]);
+                                if (w != null) {
+                                    city.addBuiltPlot(new Location(w, bx, by, bz));
+                                }
+                            }
+                        }
                     }
 
                     List<Map<String, String>> workers = (List<Map<String, String>>) cityData.get("workers");

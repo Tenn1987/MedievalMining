@@ -1,4 +1,3 @@
-
 package com.brandon.globaleconomy.economy.impl.workers;
 
 import com.brandon.globaleconomy.city.City;
@@ -43,6 +42,9 @@ public class Builder extends Worker {
         BuildingTemplate template = templates.get(random.nextInt(templates.size()));
         buildStructure(buildLoc, template, world);
 
+        // Mark this plot as used
+        city.addBuiltPlot(buildLoc);
+
         // Mark cooldown
         markCooldown();
     }
@@ -55,6 +57,7 @@ public class Builder extends Worker {
         for (int dx = -radius; dx <= radius; dx += PLOT_SIZE + GAP) {
             for (int dz = -radius; dz <= radius; dz += PLOT_SIZE + GAP) {
                 Location check = center.clone().add(dx, 0, dz);
+                if (city.isPlotUsed(check)) continue;
                 if (isFlatEnough(check, PLOT_SIZE, world)) {
                     return check;
                 }
@@ -111,7 +114,6 @@ public class Builder extends Worker {
     }
 
     // --- Template Inner Class ---
-
     public record BuildingTemplate(String name, List<String> layout, Material floor, Material wall, Material roof) {}
 
     public static class TemplateManager {
@@ -150,7 +152,6 @@ public class Builder extends Worker {
                             "W W"
                     ), Material.SPRUCE_PLANKS, Material.SPRUCE_LOG, Material.SPRUCE_SLAB)
             ));
-            // Add more biomes and buildings as needed
         }
     }
 }
